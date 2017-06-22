@@ -214,7 +214,7 @@ namespace System.Text.Parsing
         {
             if (!scanner.AtEnd)
             {
-                if (char.IsCSpace(scanner.Char))
+                if (char.IsSpace(scanner.Char))
                 {
                     scanner.Advance();
                     return Match.One;
@@ -237,7 +237,145 @@ namespace System.Text.Parsing
         {
             if (!scanner.AtEnd)
             {
-                if (char.IsCAlpha(scanner.Char))
+                if (char.IsLetter(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class UpperLetterParser : Parser
+    {
+        public UpperLetterParser() : base("upper_letter", "<upper_letter>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsUpper(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class LowerLetterParser : Parser
+    {
+        public LowerLetterParser() : base("lower_letter", "<lower_letter>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsLower(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class TitleLetterParser : Parser
+    {
+        public TitleLetterParser() : base("title_letter", "<title_letter>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsTitleLetter(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class ModifierLetterParser : Parser
+    {
+        public ModifierLetterParser() : base("modifier_letter", "<modifier_letter>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsModifierLetter(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class OtherLetterParser : Parser
+    {
+        public OtherLetterParser() : base("other_letter", "<other_letter>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsOtherLetter(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class CasedLetterParser : Parser
+    {
+        public CasedLetterParser() : base("cased_letter", "<cased_letter>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsCasedLetter(scanner.Char))
                 {
                     scanner.Advance();
                     return Match.One;
@@ -260,7 +398,7 @@ namespace System.Text.Parsing
         {
             if (!scanner.AtEnd)
             {
-                if (char.IsCDigit(scanner.Char))
+                if (char.IsDigit(scanner.Char))
                 {
                     scanner.Advance();
                     return Match.One;
@@ -283,7 +421,191 @@ namespace System.Text.Parsing
         {
             if (!scanner.AtEnd)
             {
-                if (char.IsCHexDigit(scanner.Char))
+                if (char.IsHexDigit(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class MarkParser : Parser
+    {
+        public MarkParser() : base("mark", "<mark>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsMark(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class NonspacingMarkParser : Parser
+    {
+        public NonspacingMarkParser() : base("nonspacing_mark", "<nonspacing_mark>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsNonspacingMark(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class SpacingMarkParser : Parser
+    {
+        public SpacingMarkParser() : base("spacing_mark", "<spacing_mark>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsSpacingMark(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class EnclosingMarkParser : Parser
+    {
+        public EnclosingMarkParser() : base("enclosing_mark", "<enclosing_mark>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsEnclosingMark(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class NumberParser : Parser
+    {
+        public NumberParser() : base("number", "<number>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsNumber(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class DecimalNumberParser : Parser
+    {
+        public DecimalNumberParser() : base("decimal_number", "<decimal_number>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsDecimalNumber(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class LetterNumberParser : Parser
+    {
+        public LetterNumberParser() : base("letter_number", "<letter_number>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsLetterNumber(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class OtherNumberParser : Parser
+    {
+        public OtherNumberParser() : base("other_number", "<other_number>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsOtherNumber(scanner.Char))
                 {
                     scanner.Advance();
                     return Match.One;
@@ -306,11 +628,652 @@ namespace System.Text.Parsing
         {
             if (!scanner.AtEnd)
             {
-                if (char.IsCPunctuation(scanner.Char))
+                if (char.IsPunctuation(scanner.Char))
                 {
                     scanner.Advance();
                     return Match.One;
                 }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class ConnectorPunctuationParser : Parser
+    {
+        public ConnectorPunctuationParser() : base("connector_punctuation", "<connector_punctuation>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsConnectorPunctuation(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class DashPunctuationParser : Parser
+    {
+        public DashPunctuationParser() : base("dash_punctuation", "<dash_punctuation>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsDashPunctuation(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class OpenPunctuationParser : Parser
+    {
+        public OpenPunctuationParser() : base("open_punctuation", "<open_punctuation>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsOpenPunctuation(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class ClosePunctuationParser : Parser
+    {
+        public ClosePunctuationParser() : base("close_punctuation", "<close_punctuation>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsClosePunctuation(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class InitialPunctuationParser : Parser
+    {
+        public InitialPunctuationParser() : base("initial_punctuation", "<initial_punctuation>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsInitialPunctuation(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class FinalPunctuationParser : Parser
+    {
+        public FinalPunctuationParser() : base("final_punctuation", "<final_punctuation>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsFinalPunctuation(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class OtherPunctuationParser : Parser
+    {
+        public OtherPunctuationParser() : base("other_punctuation", "<other_punctuation>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsOtherPunctuation(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class SymbolParser : Parser
+    {
+        public SymbolParser() : base("symbol", "<symbol>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsSymbol(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class MathSymbolParser : Parser
+    {
+        public MathSymbolParser() : base("math_symbol", "<math_symbol>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsMathSymbol(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class CurrencySymbolParser : Parser
+    {
+        public CurrencySymbolParser() : base("currency_symbol", "<currency_symbol>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsCurrencySymbol(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class ModifierSymbolParser : Parser
+    {
+        public ModifierSymbolParser() : base("modifier_symbol", "<modifier_symbol>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsModifierSymbol(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class OtherSymbolParser : Parser
+    {
+        public OtherSymbolParser() : base("other_symbol", "<other_symbol>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsOtherSymbol(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class SeparatorParser : Parser
+    {
+        public SeparatorParser() : base("separator", "<separator>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsSeparator(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class SpaceSeparatorParser : Parser
+    {
+        public SpaceSeparatorParser() : base("space_separator", "<space_separator>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsSpaceSeparator(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class LineSeparatorParser : Parser
+    {
+        public LineSeparatorParser() : base("line_separator", "<line_separator>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsLineSeparator(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class ParagraphSeparatorParser : Parser
+    {
+        public ParagraphSeparatorParser() : base("paragraph_separator", "<paragraph_separator>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsParagraphSeparator(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class OtherParser : Parser
+    {
+        public OtherParser() : base("other", "<other>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsOther(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class ControlParser : Parser
+    {
+        public ControlParser() : base("control", "<control>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsControl(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class FormatParser : Parser
+    {
+        public FormatParser() : base("format", "<format>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsFormat(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class SurrogateParser : Parser
+    {
+        public SurrogateParser() : base("surrogate", "<surrogate>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsSurrogate(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class PrivateUseParser : Parser
+    {
+        public PrivateUseParser() : base("private_use", "<private_use>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsPrivateUse(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class UnassignedParser : Parser
+    {
+        public UnassignedParser() : base("unassigned", "<unassigned>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsUnassigned(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class GraphicParser : Parser
+    {
+        public GraphicParser() : base("graphic", "<graphic>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsGraphic(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class BaseCharParser : Parser
+    {
+        public BaseCharParser() : base("base_char", "<base_char>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsBaseChar(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class AlphabeticParser : Parser
+    {
+        public AlphabeticParser() : base("alphabetic", "<alphabetic>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsAlphabetic(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class IdStartParser : Parser
+    {
+        public IdStartParser() : base("idstart", "<idstart>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsIdStart(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+
+    public class IdContParser : Parser
+    {
+        public IdContParser() : base("idcont", "<idcont>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                if (char.IsIdCont(scanner.Char))
+                {
+                    scanner.Advance();
+                    return Match.One;
+                }
+            }
+            return Match.Nothing;
+        }
+        public override void Accept(Visitor visitor)
+        {
+            visitor.Visit(this);
+        }
+    }
+    
+    public class AnyCharParser : Parser
+    {
+        public AnyCharParser() : base("anyChar", "<anyChar>")
+        {
+        }
+        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
+        {
+            if (!scanner.AtEnd)
+            {
+                scanner.Advance();
+                return Match.One;
             }
             return Match.Nothing;
         }
@@ -354,25 +1317,5 @@ namespace System.Text.Parsing
         }
         private uint rangeStart;
         private uint rangeEnd;
-    }
-
-    public class AnyCharParser : Parser
-    {
-        public AnyCharParser() : base("anyChar", "<anyChar>")
-        {
-        }
-        public override Match Parse(Scanner scanner, Stack<object> stack, ParsingData parsingData)
-        {
-            if (!scanner.AtEnd)
-            {
-                scanner.Advance();
-                return Match.One;
-            }
-            return Match.Nothing;
-        }
-        public override void Accept(Visitor visitor)
-        {
-            visitor.Visit(this);
-        }
     }
 }

@@ -15,22 +15,63 @@ namespace Syntax
         {
             Owner = 0;
             keywords0 = new List<string>();
-            keywords0.Add("var");
-            keywords0.Add("skip");
-            keywords0.Add("token");
-            keywords0.Add("grammar");
-            keywords0.Add("letter");
-            keywords0.Add("keyword");
-            keywords0.Add("start");
-            keywords0.Add("punctuation");
+            keywords0.Add("line_separator");
+            keywords0.Add("other_number");
             keywords0.Add("hexdigit");
-            keywords0.Add("digit");
-            keywords0.Add("empty");
-            keywords0.Add("range");
-            keywords0.Add("keyword_list");
-            keywords0.Add("anychar");
+            keywords0.Add("idcont");
+            keywords0.Add("token");
+            keywords0.Add("cased_letter");
+            keywords0.Add("math_symbol");
             keywords0.Add("using");
+            keywords0.Add("letter");
+            keywords0.Add("control");
+            keywords0.Add("empty");
+            keywords0.Add("title_letter");
+            keywords0.Add("spacing_mark");
+            keywords0.Add("dash_punctuation");
+            keywords0.Add("separator");
+            keywords0.Add("punctuation");
+            keywords0.Add("other_letter");
+            keywords0.Add("final_punctuation");
+            keywords0.Add("number");
+            keywords0.Add("skip");
+            keywords0.Add("range");
+            keywords0.Add("mark");
+            keywords0.Add("connector_punctuation");
+            keywords0.Add("alphabetic");
+            keywords0.Add("keyword_list");
+            keywords0.Add("basechar");
+            keywords0.Add("other_symbol");
+            keywords0.Add("surrogate");
+            keywords0.Add("letter_number");
+            keywords0.Add("start");
+            keywords0.Add("modifier_letter");
+            keywords0.Add("graphic");
+            keywords0.Add("anychar");
+            keywords0.Add("keyword");
+            keywords0.Add("nonspacing_mark");
+            keywords0.Add("upper_letter");
+            keywords0.Add("lower_letter");
+            keywords0.Add("modifier_symbol");
+            keywords0.Add("unassigned");
+            keywords0.Add("other");
+            keywords0.Add("digit");
+            keywords0.Add("private_use");
+            keywords0.Add("currency_symbol");
+            keywords0.Add("var");
+            keywords0.Add("paragraph_separator");
             keywords0.Add("space");
+            keywords0.Add("space_separator");
+            keywords0.Add("initial_punctuation");
+            keywords0.Add("symbol");
+            keywords0.Add("idstart");
+            keywords0.Add("enclosing_mark");
+            keywords0.Add("close_punctuation");
+            keywords0.Add("grammar");
+            keywords0.Add("format");
+            keywords0.Add("open_punctuation");
+            keywords0.Add("decimal_number");
+            keywords0.Add("other_punctuation");
             parsingDomain.AddGrammar(this);
             CreateRules();
             Link();
@@ -48,6 +89,7 @@ namespace Syntax
                 if (log != null)
                 {
                     xmlLog = new XmlLog(log);
+                    xmlLog.MaxLineLength = MaxLogLineLength;
                     scanner.Log = xmlLog;
                     xmlLog.WriteBeginRule("parse");
                     xmlLog.IncIndent();
@@ -572,22 +614,22 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
             if (grammar0 == null)
             {
-                grammar0 = new Code.TypeExprGrammar(parsingDomain);
+                grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
-            Grammar grammar1 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            Grammar grammar1 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
             if (grammar1 == null)
             {
-                grammar1 = new System.Text.Parsing.stdlib(parsingDomain);
+                grammar1 = new Code.IdentifierGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
-            Grammar grammar2 = parsingDomain.GetGrammar("Code.IdentifierGrammar");
+            Grammar grammar2 = parsingDomain.GetGrammar("Code.TypeExprGrammar");
             if (grammar2 == null)
             {
-                grammar2 = new Code.IdentifierGrammar(parsingDomain);
+                grammar2 = new Code.TypeExprGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar2);
         }

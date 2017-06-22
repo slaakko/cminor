@@ -138,13 +138,13 @@ namespace System.Text.Parsing
         exponent_part                       ::= token([eE] sign? digit_sequence)
                                             ;
 
-        number : double                     ::= double:r{ value = r; } | int:i{ value = i; }
+        num : double                        ::= double:r{ value = r; } | int:i{ value = i; }
                                             ;
 
         bool : bool                         ::= keyword("true"){ value = true; } | keyword("false"){ value = false; }
                                             ;
 
-        identifier : string                 ::= token((letter | '_') (letter | digit | '_')*)
+        identifier : string                 ::= token(idstart idcont*)
                                             {
                                                 value = match;
                                             }

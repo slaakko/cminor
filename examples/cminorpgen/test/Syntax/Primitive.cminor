@@ -113,6 +113,88 @@ namespace Syntax
                 a11ActionParser.Action = A11Action;
                 ActionParser a12ActionParser = GetAction("A12");
                 a12ActionParser.Action = A12Action;
+                ActionParser a13ActionParser = GetAction("A13");
+                a13ActionParser.Action = A13Action;
+                ActionParser a14ActionParser = GetAction("A14");
+                a14ActionParser.Action = A14Action;
+                ActionParser a15ActionParser = GetAction("A15");
+                a15ActionParser.Action = A15Action;
+                ActionParser a16ActionParser = GetAction("A16");
+                a16ActionParser.Action = A16Action;
+                ActionParser a17ActionParser = GetAction("A17");
+                a17ActionParser.Action = A17Action;
+                ActionParser a18ActionParser = GetAction("A18");
+                a18ActionParser.Action = A18Action;
+                ActionParser a19ActionParser = GetAction("A19");
+                a19ActionParser.Action = A19Action;
+                ActionParser a20ActionParser = GetAction("A20");
+                a20ActionParser.Action = A20Action;
+                ActionParser a21ActionParser = GetAction("A21");
+                a21ActionParser.Action = A21Action;
+                ActionParser a22ActionParser = GetAction("A22");
+                a22ActionParser.Action = A22Action;
+                ActionParser a23ActionParser = GetAction("A23");
+                a23ActionParser.Action = A23Action;
+                ActionParser a24ActionParser = GetAction("A24");
+                a24ActionParser.Action = A24Action;
+                ActionParser a25ActionParser = GetAction("A25");
+                a25ActionParser.Action = A25Action;
+                ActionParser a26ActionParser = GetAction("A26");
+                a26ActionParser.Action = A26Action;
+                ActionParser a27ActionParser = GetAction("A27");
+                a27ActionParser.Action = A27Action;
+                ActionParser a28ActionParser = GetAction("A28");
+                a28ActionParser.Action = A28Action;
+                ActionParser a29ActionParser = GetAction("A29");
+                a29ActionParser.Action = A29Action;
+                ActionParser a30ActionParser = GetAction("A30");
+                a30ActionParser.Action = A30Action;
+                ActionParser a31ActionParser = GetAction("A31");
+                a31ActionParser.Action = A31Action;
+                ActionParser a32ActionParser = GetAction("A32");
+                a32ActionParser.Action = A32Action;
+                ActionParser a33ActionParser = GetAction("A33");
+                a33ActionParser.Action = A33Action;
+                ActionParser a34ActionParser = GetAction("A34");
+                a34ActionParser.Action = A34Action;
+                ActionParser a35ActionParser = GetAction("A35");
+                a35ActionParser.Action = A35Action;
+                ActionParser a36ActionParser = GetAction("A36");
+                a36ActionParser.Action = A36Action;
+                ActionParser a37ActionParser = GetAction("A37");
+                a37ActionParser.Action = A37Action;
+                ActionParser a38ActionParser = GetAction("A38");
+                a38ActionParser.Action = A38Action;
+                ActionParser a39ActionParser = GetAction("A39");
+                a39ActionParser.Action = A39Action;
+                ActionParser a40ActionParser = GetAction("A40");
+                a40ActionParser.Action = A40Action;
+                ActionParser a41ActionParser = GetAction("A41");
+                a41ActionParser.Action = A41Action;
+                ActionParser a42ActionParser = GetAction("A42");
+                a42ActionParser.Action = A42Action;
+                ActionParser a43ActionParser = GetAction("A43");
+                a43ActionParser.Action = A43Action;
+                ActionParser a44ActionParser = GetAction("A44");
+                a44ActionParser.Action = A44Action;
+                ActionParser a45ActionParser = GetAction("A45");
+                a45ActionParser.Action = A45Action;
+                ActionParser a46ActionParser = GetAction("A46");
+                a46ActionParser.Action = A46Action;
+                ActionParser a47ActionParser = GetAction("A47");
+                a47ActionParser.Action = A47Action;
+                ActionParser a48ActionParser = GetAction("A48");
+                a48ActionParser.Action = A48Action;
+                ActionParser a49ActionParser = GetAction("A49");
+                a49ActionParser.Action = A49Action;
+                ActionParser a50ActionParser = GetAction("A50");
+                a50ActionParser.Action = A50Action;
+                ActionParser a51ActionParser = GetAction("A51");
+                a51ActionParser.Action = A51Action;
+                ActionParser a52ActionParser = GetAction("A52");
+                a52ActionParser.Action = A52Action;
+                ActionParser a53ActionParser = GetAction("A53");
+                a53ActionParser.Action = A53Action;
                 NonterminalParser charNonterminalParser = GetNonterminal("Char");
                 charNonterminalParser.Post = PostChar;
                 NonterminalParser stringNonterminalParser = GetNonterminal("String");
@@ -135,8 +217,90 @@ namespace Syntax
                 digitNonterminalParser.Post = PostDigit;
                 NonterminalParser hexDigitNonterminalParser = GetNonterminal("HexDigit");
                 hexDigitNonterminalParser.Post = PostHexDigit;
+                NonterminalParser upperLetterNonterminalParser = GetNonterminal("UpperLetter");
+                upperLetterNonterminalParser.Post = PostUpperLetter;
+                NonterminalParser lowerLetterNonterminalParser = GetNonterminal("LowerLetter");
+                lowerLetterNonterminalParser.Post = PostLowerLetter;
+                NonterminalParser titleLetterNonterminalParser = GetNonterminal("TitleLetter");
+                titleLetterNonterminalParser.Post = PostTitleLetter;
+                NonterminalParser modifierLetterNonterminalParser = GetNonterminal("ModifierLetter");
+                modifierLetterNonterminalParser.Post = PostModifierLetter;
+                NonterminalParser otherLetterNonterminalParser = GetNonterminal("OtherLetter");
+                otherLetterNonterminalParser.Post = PostOtherLetter;
+                NonterminalParser casedLetterNonterminalParser = GetNonterminal("CasedLetter");
+                casedLetterNonterminalParser.Post = PostCasedLetter;
+                NonterminalParser markNonterminalParser = GetNonterminal("Mark");
+                markNonterminalParser.Post = PostMark;
+                NonterminalParser nonspacingMarkNonterminalParser = GetNonterminal("NonspacingMark");
+                nonspacingMarkNonterminalParser.Post = PostNonspacingMark;
+                NonterminalParser enclosingMarkNonterminalParser = GetNonterminal("EnclosingMark");
+                enclosingMarkNonterminalParser.Post = PostEnclosingMark;
+                NonterminalParser spacingMarkNonterminalParser = GetNonterminal("SpacingMark");
+                spacingMarkNonterminalParser.Post = PostSpacingMark;
+                NonterminalParser numberNonterminalParser = GetNonterminal("Number");
+                numberNonterminalParser.Post = PostNumber;
+                NonterminalParser decimalNumberNonterminalParser = GetNonterminal("DecimalNumber");
+                decimalNumberNonterminalParser.Post = PostDecimalNumber;
+                NonterminalParser letterNumberNonterminalParser = GetNonterminal("LetterNumber");
+                letterNumberNonterminalParser.Post = PostLetterNumber;
+                NonterminalParser otherNumberNonterminalParser = GetNonterminal("OtherNumber");
+                otherNumberNonterminalParser.Post = PostOtherNumber;
                 NonterminalParser punctuationNonterminalParser = GetNonterminal("Punctuation");
                 punctuationNonterminalParser.Post = PostPunctuation;
+                NonterminalParser connectorPunctuationNonterminalParser = GetNonterminal("ConnectorPunctuation");
+                connectorPunctuationNonterminalParser.Post = PostConnectorPunctuation;
+                NonterminalParser dashPunctuationNonterminalParser = GetNonterminal("DashPunctuation");
+                dashPunctuationNonterminalParser.Post = PostDashPunctuation;
+                NonterminalParser openPunctuationNonterminalParser = GetNonterminal("OpenPunctuation");
+                openPunctuationNonterminalParser.Post = PostOpenPunctuation;
+                NonterminalParser closePunctuationNonterminalParser = GetNonterminal("ClosePunctuation");
+                closePunctuationNonterminalParser.Post = PostClosePunctuation;
+                NonterminalParser initialPunctuationNonterminalParser = GetNonterminal("InitialPunctuation");
+                initialPunctuationNonterminalParser.Post = PostInitialPunctuation;
+                NonterminalParser finalPunctuationNonterminalParser = GetNonterminal("FinalPunctuation");
+                finalPunctuationNonterminalParser.Post = PostFinalPunctuation;
+                NonterminalParser otherPunctuationNonterminalParser = GetNonterminal("OtherPunctuation");
+                otherPunctuationNonterminalParser.Post = PostOtherPunctuation;
+                NonterminalParser symbolNonterminalParser = GetNonterminal("Symbol");
+                symbolNonterminalParser.Post = PostSymbol;
+                NonterminalParser mathSymbolNonterminalParser = GetNonterminal("MathSymbol");
+                mathSymbolNonterminalParser.Post = PostMathSymbol;
+                NonterminalParser currencySymbolNonterminalParser = GetNonterminal("CurrencySymbol");
+                currencySymbolNonterminalParser.Post = PostCurrencySymbol;
+                NonterminalParser modifierSymbolNonterminalParser = GetNonterminal("ModifierSymbol");
+                modifierSymbolNonterminalParser.Post = PostModifierSymbol;
+                NonterminalParser otherSymbolNonterminalParser = GetNonterminal("OtherSymbol");
+                otherSymbolNonterminalParser.Post = PostOtherSymbol;
+                NonterminalParser separatorNonterminalParser = GetNonterminal("Separator");
+                separatorNonterminalParser.Post = PostSeparator;
+                NonterminalParser spaceSeparatorNonterminalParser = GetNonterminal("SpaceSeparator");
+                spaceSeparatorNonterminalParser.Post = PostSpaceSeparator;
+                NonterminalParser lineSeparatorNonterminalParser = GetNonterminal("LineSeparator");
+                lineSeparatorNonterminalParser.Post = PostLineSeparator;
+                NonterminalParser paragraphSeparatorNonterminalParser = GetNonterminal("ParagraphSeparator");
+                paragraphSeparatorNonterminalParser.Post = PostParagraphSeparator;
+                NonterminalParser otherNonterminalParser = GetNonterminal("Other");
+                otherNonterminalParser.Post = PostOther;
+                NonterminalParser controlNonterminalParser = GetNonterminal("Control");
+                controlNonterminalParser.Post = PostControl;
+                NonterminalParser formatNonterminalParser = GetNonterminal("Format");
+                formatNonterminalParser.Post = PostFormat;
+                NonterminalParser surrogateNonterminalParser = GetNonterminal("Surrogate");
+                surrogateNonterminalParser.Post = PostSurrogate;
+                NonterminalParser privateUseNonterminalParser = GetNonterminal("PrivateUse");
+                privateUseNonterminalParser.Post = PostPrivateUse;
+                NonterminalParser unassignedNonterminalParser = GetNonterminal("Unassigned");
+                unassignedNonterminalParser.Post = PostUnassigned;
+                NonterminalParser graphicNonterminalParser = GetNonterminal("Graphic");
+                graphicNonterminalParser.Post = PostGraphic;
+                NonterminalParser baseCharNonterminalParser = GetNonterminal("BaseChar");
+                baseCharNonterminalParser.Post = PostBaseChar;
+                NonterminalParser alphabeticNonterminalParser = GetNonterminal("Alphabetic");
+                alphabeticNonterminalParser.Post = PostAlphabetic;
+                NonterminalParser idStartNonterminalParser = GetNonterminal("IdStart");
+                idStartNonterminalParser.Post = PostIdStart;
+                NonterminalParser idContNonterminalParser = GetNonterminal("IdCont");
+                idContNonterminalParser.Post = PostIdCont;
                 NonterminalParser rangeNonterminalParser = GetNonterminal("Range");
                 rangeNonterminalParser.Post = PostRange;
             }
@@ -198,9 +362,214 @@ namespace Syntax
             public void A11Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
                 Context context = cast<Context>(parsingData.GetContext(Id));
-                context.value = context.fromPunctuation;
+                context.value = context.fromUpperLetter;
             }
             public void A12Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromLowerLetter;
+            }
+            public void A13Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromTitleLetter;
+            }
+            public void A14Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromModifierLetter;
+            }
+            public void A15Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromOtherLetter;
+            }
+            public void A16Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromCasedLetter;
+            }
+            public void A17Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromMark;
+            }
+            public void A18Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromNonspacingMark;
+            }
+            public void A19Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromEnclosingMark;
+            }
+            public void A20Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromSpacingMark;
+            }
+            public void A21Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromNumber;
+            }
+            public void A22Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromDecimalNumber;
+            }
+            public void A23Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromLetterNumber;
+            }
+            public void A24Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromOtherNumber;
+            }
+            public void A25Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromPunctuation;
+            }
+            public void A26Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromConnectorPunctuation;
+            }
+            public void A27Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromDashPunctuation;
+            }
+            public void A28Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromOpenPunctuation;
+            }
+            public void A29Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromClosePunctuation;
+            }
+            public void A30Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromInitialPunctuation;
+            }
+            public void A31Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromFinalPunctuation;
+            }
+            public void A32Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromOtherPunctuation;
+            }
+            public void A33Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromSymbol;
+            }
+            public void A34Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromMathSymbol;
+            }
+            public void A35Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromCurrencySymbol;
+            }
+            public void A36Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromModifierSymbol;
+            }
+            public void A37Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromOtherSymbol;
+            }
+            public void A38Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromSeparator;
+            }
+            public void A39Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromSpaceSeparator;
+            }
+            public void A40Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromLineSeparator;
+            }
+            public void A41Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromParagraphSeparator;
+            }
+            public void A42Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromOther;
+            }
+            public void A43Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromControl;
+            }
+            public void A44Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromFormat;
+            }
+            public void A45Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromSurrogate;
+            }
+            public void A46Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromPrivateUse;
+            }
+            public void A47Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromUnassigned;
+            }
+            public void A48Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromGraphic;
+            }
+            public void A49Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromBaseChar;
+            }
+            public void A50Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromAlphabetic;
+            }
+            public void A51Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromIdStart;
+            }
+            public void A52Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = context.fromIdCont;
+            }
+            public void A53Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
             {
                 Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = context.fromRange;
@@ -293,12 +662,340 @@ namespace Syntax
                     context.fromHexDigit = cast<Parser>(stack.Pop());
                 }
             }
+            public void PostUpperLetter(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromUpperLetter = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostLowerLetter(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromLowerLetter = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostTitleLetter(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromTitleLetter = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostModifierLetter(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromModifierLetter = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostOtherLetter(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromOtherLetter = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostCasedLetter(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromCasedLetter = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostMark(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromMark = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostNonspacingMark(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromNonspacingMark = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostEnclosingMark(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromEnclosingMark = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostSpacingMark(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromSpacingMark = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostNumber(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromNumber = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostDecimalNumber(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromDecimalNumber = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostLetterNumber(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromLetterNumber = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostOtherNumber(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromOtherNumber = cast<Parser>(stack.Pop());
+                }
+            }
             public void PostPunctuation(Stack<object> stack, ParsingData parsingData, bool matched)
             {
                 Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
                     context.fromPunctuation = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostConnectorPunctuation(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromConnectorPunctuation = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostDashPunctuation(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromDashPunctuation = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostOpenPunctuation(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromOpenPunctuation = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostClosePunctuation(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromClosePunctuation = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostInitialPunctuation(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromInitialPunctuation = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostFinalPunctuation(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromFinalPunctuation = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostOtherPunctuation(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromOtherPunctuation = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostSymbol(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromSymbol = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostMathSymbol(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromMathSymbol = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostCurrencySymbol(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromCurrencySymbol = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostModifierSymbol(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromModifierSymbol = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostOtherSymbol(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromOtherSymbol = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostSeparator(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromSeparator = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostSpaceSeparator(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromSpaceSeparator = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostLineSeparator(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromLineSeparator = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostParagraphSeparator(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromParagraphSeparator = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostOther(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromOther = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostControl(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromControl = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostFormat(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromFormat = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostSurrogate(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromSurrogate = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostPrivateUse(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromPrivateUse = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostUnassigned(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromUnassigned = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostGraphic(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromGraphic = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostBaseChar(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromBaseChar = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostAlphabetic(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromAlphabetic = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostIdStart(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromIdStart = cast<Parser>(stack.Pop());
+                }
+            }
+            public void PostIdCont(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    context.fromIdCont = cast<Parser>(stack.Pop());
                 }
             }
             public void PostRange(Stack<object> stack, ParsingData parsingData, bool matched)
@@ -323,7 +1020,48 @@ namespace Syntax
                 public Parser fromLetter;
                 public Parser fromDigit;
                 public Parser fromHexDigit;
+                public Parser fromUpperLetter;
+                public Parser fromLowerLetter;
+                public Parser fromTitleLetter;
+                public Parser fromModifierLetter;
+                public Parser fromOtherLetter;
+                public Parser fromCasedLetter;
+                public Parser fromMark;
+                public Parser fromNonspacingMark;
+                public Parser fromEnclosingMark;
+                public Parser fromSpacingMark;
+                public Parser fromNumber;
+                public Parser fromDecimalNumber;
+                public Parser fromLetterNumber;
+                public Parser fromOtherNumber;
                 public Parser fromPunctuation;
+                public Parser fromConnectorPunctuation;
+                public Parser fromDashPunctuation;
+                public Parser fromOpenPunctuation;
+                public Parser fromClosePunctuation;
+                public Parser fromInitialPunctuation;
+                public Parser fromFinalPunctuation;
+                public Parser fromOtherPunctuation;
+                public Parser fromSymbol;
+                public Parser fromMathSymbol;
+                public Parser fromCurrencySymbol;
+                public Parser fromModifierSymbol;
+                public Parser fromOtherSymbol;
+                public Parser fromSeparator;
+                public Parser fromSpaceSeparator;
+                public Parser fromLineSeparator;
+                public Parser fromParagraphSeparator;
+                public Parser fromOther;
+                public Parser fromControl;
+                public Parser fromFormat;
+                public Parser fromSurrogate;
+                public Parser fromPrivateUse;
+                public Parser fromUnassigned;
+                public Parser fromGraphic;
+                public Parser fromBaseChar;
+                public Parser fromAlphabetic;
+                public Parser fromIdStart;
+                public Parser fromIdCont;
                 public Parser fromRange;
             }
         }
@@ -1053,6 +1791,496 @@ namespace Syntax
                 public Parser value;
             }
         }
+        public class UpperLetterRule : System.Text.Parsing.RuleParser
+        {
+            public UpperLetterRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new UpperLetterParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class LowerLetterRule : System.Text.Parsing.RuleParser
+        {
+            public LowerLetterRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new LowerLetterParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class TitleLetterRule : System.Text.Parsing.RuleParser
+        {
+            public TitleLetterRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new TitleLetterParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class ModifierLetterRule : System.Text.Parsing.RuleParser
+        {
+            public ModifierLetterRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new ModifierLetterParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class OtherLetterRule : System.Text.Parsing.RuleParser
+        {
+            public OtherLetterRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new OtherLetterParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class CasedLetterRule : System.Text.Parsing.RuleParser
+        {
+            public CasedLetterRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new CasedLetterParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class MarkRule : System.Text.Parsing.RuleParser
+        {
+            public MarkRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new MarkParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class NonspacingMarkRule : System.Text.Parsing.RuleParser
+        {
+            public NonspacingMarkRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new NonspacingMarkParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class SpacingMarkRule : System.Text.Parsing.RuleParser
+        {
+            public SpacingMarkRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new SpacingMarkParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class EnclosingMarkRule : System.Text.Parsing.RuleParser
+        {
+            public EnclosingMarkRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new EnclosingMarkParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class NumberRule : System.Text.Parsing.RuleParser
+        {
+            public NumberRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new NumberParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class DecimalNumberRule : System.Text.Parsing.RuleParser
+        {
+            public DecimalNumberRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new DecimalNumberParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class LetterNumberRule : System.Text.Parsing.RuleParser
+        {
+            public LetterNumberRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new LetterNumberParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class OtherNumberRule : System.Text.Parsing.RuleParser
+        {
+            public OtherNumberRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new OtherNumberParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
         public class PunctuationRule : System.Text.Parsing.RuleParser
         {
             public PunctuationRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
@@ -1082,6 +2310,951 @@ namespace Syntax
             {
                 Context context = cast<Context>(parsingData.GetContext(Id));
                 context.value = new PunctuationParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class ConnectorPunctuationRule : System.Text.Parsing.RuleParser
+        {
+            public ConnectorPunctuationRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new ConnectorPunctuationParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class DashPunctuationRule : System.Text.Parsing.RuleParser
+        {
+            public DashPunctuationRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new DashPunctuationParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class OpenPunctuationRule : System.Text.Parsing.RuleParser
+        {
+            public OpenPunctuationRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new OpenPunctuationParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class ClosePunctuationRule : System.Text.Parsing.RuleParser
+        {
+            public ClosePunctuationRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new ClosePunctuationParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class InitialPunctuationRule : System.Text.Parsing.RuleParser
+        {
+            public InitialPunctuationRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new InitialPunctuationParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class FinalPunctuationRule : System.Text.Parsing.RuleParser
+        {
+            public FinalPunctuationRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new FinalPunctuationParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class OtherPunctuationRule : System.Text.Parsing.RuleParser
+        {
+            public OtherPunctuationRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new OtherPunctuationParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class SymbolRule : System.Text.Parsing.RuleParser
+        {
+            public SymbolRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new SymbolParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class MathSymbolRule : System.Text.Parsing.RuleParser
+        {
+            public MathSymbolRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new MathSymbolParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class CurrencySymbolRule : System.Text.Parsing.RuleParser
+        {
+            public CurrencySymbolRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new CurrencySymbolParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class ModifierSymbolRule : System.Text.Parsing.RuleParser
+        {
+            public ModifierSymbolRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new ModifierSymbolParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class OtherSymbolRule : System.Text.Parsing.RuleParser
+        {
+            public OtherSymbolRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new OtherSymbolParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class SeparatorRule : System.Text.Parsing.RuleParser
+        {
+            public SeparatorRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new SeparatorParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class SpaceSeparatorRule : System.Text.Parsing.RuleParser
+        {
+            public SpaceSeparatorRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new SpaceSeparatorParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class LineSeparatorRule : System.Text.Parsing.RuleParser
+        {
+            public LineSeparatorRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new LineSeparatorParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class ParagraphSeparatorRule : System.Text.Parsing.RuleParser
+        {
+            public ParagraphSeparatorRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new ParagraphSeparatorParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class OtherRule : System.Text.Parsing.RuleParser
+        {
+            public OtherRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new OtherParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class ControlRule : System.Text.Parsing.RuleParser
+        {
+            public ControlRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new ControlParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class FormatRule : System.Text.Parsing.RuleParser
+        {
+            public FormatRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new FormatParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class SurrogateRule : System.Text.Parsing.RuleParser
+        {
+            public SurrogateRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new SurrogateParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class PrivateUseRule : System.Text.Parsing.RuleParser
+        {
+            public PrivateUseRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new PrivateUseParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class UnassignedRule : System.Text.Parsing.RuleParser
+        {
+            public UnassignedRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new UnassignedParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class GraphicRule : System.Text.Parsing.RuleParser
+        {
+            public GraphicRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new GraphicParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class BaseCharRule : System.Text.Parsing.RuleParser
+        {
+            public BaseCharRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new BaseCharParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class AlphabeticRule : System.Text.Parsing.RuleParser
+        {
+            public AlphabeticRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new AlphabeticParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class IdStartRule : System.Text.Parsing.RuleParser
+        {
+            public IdStartRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new IdStartParser();
+            }
+            public class Context : System.Text.Parsing.Context
+            {
+                public Parser value;
+            }
+        }
+        public class IdContRule : System.Text.Parsing.RuleParser
+        {
+            public IdContRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            {
+                ValueTypeName = "Parser";
+            }
+            public override void Enter(Stack<object> stack, ParsingData parsingData)
+            {
+                parsingData.PushContext(Id, new Context());
+                Context context = cast<Context>(parsingData.GetContext(Id));
+            }
+            public override void Leave(Stack<object> stack, ParsingData parsingData, bool matched)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                if (matched)
+                {
+                    stack.Push(context.value);
+                }
+                parsingData.PopContext(Id);
+            }
+            public override void Link()
+            {
+                ActionParser a0ActionParser = GetAction("A0");
+                a0ActionParser.Action = A0Action;
+            }
+            public void A0Action(string match, Span span, string fileName, ParsingData parsingData, ref bool pass)
+            {
+                Context context = cast<Context>(parsingData.GetContext(Id));
+                context.value = new IdContParser();
             }
             public class Context : System.Text.Parsing.Context
             {
@@ -1212,16 +3385,16 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain parsingDomain = Domain;
-            Grammar grammar0 = parsingDomain.GetGrammar("Syntax.ElementGrammar");
+            Grammar grammar0 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
             if (grammar0 == null)
             {
-                grammar0 = new Syntax.ElementGrammar(parsingDomain);
+                grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
-            Grammar grammar1 = parsingDomain.GetGrammar("System.Text.Parsing.stdlib");
+            Grammar grammar1 = parsingDomain.GetGrammar("Syntax.ElementGrammar");
             if (grammar1 == null)
             {
-                grammar1 = new System.Text.Parsing.stdlib(parsingDomain);
+                grammar1 = new Syntax.ElementGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
         }
@@ -1247,31 +3420,154 @@ namespace Syntax
                                                     new AlternativeParser(
                                                         new AlternativeParser(
                                                             new AlternativeParser(
-                                                                new ActionParser("A0",
-                                                                    new NonterminalParser("Char", "Char", 0)),
-                                                                new ActionParser("A1",
-                                                                    new NonterminalParser("String", "String", 0))),
-                                                            new ActionParser("A2",
-                                                                new NonterminalParser("CharSet", "CharSet", 0))),
-                                                        new ActionParser("A3",
-                                                            new NonterminalParser("Keyword", "Keyword", 0))),
-                                                    new ActionParser("A4",
-                                                        new NonterminalParser("KeywordList", "KeywordList", 0))),
-                                                new ActionParser("A5",
-                                                    new NonterminalParser("Empty", "Empty", 0))),
-                                            new ActionParser("A6",
-                                                new NonterminalParser("Space", "Space", 0))),
-                                        new ActionParser("A7",
-                                            new NonterminalParser("AnyChar", "AnyChar", 0))),
-                                    new ActionParser("A8",
-                                        new NonterminalParser("Letter", "Letter", 0))),
-                                new ActionParser("A9",
-                                    new NonterminalParser("Digit", "Digit", 0))),
-                            new ActionParser("A10",
-                                new NonterminalParser("HexDigit", "HexDigit", 0))),
-                        new ActionParser("A11",
-                            new NonterminalParser("Punctuation", "Punctuation", 0))),
-                    new ActionParser("A12",
+                                                                new AlternativeParser(
+                                                                    new AlternativeParser(
+                                                                        new AlternativeParser(
+                                                                            new AlternativeParser(
+                                                                                new AlternativeParser(
+                                                                                    new AlternativeParser(
+                                                                                        new AlternativeParser(
+                                                                                            new AlternativeParser(
+                                                                                                new AlternativeParser(
+                                                                                                    new AlternativeParser(
+                                                                                                        new AlternativeParser(
+                                                                                                            new AlternativeParser(
+                                                                                                                new AlternativeParser(
+                                                                                                                    new AlternativeParser(
+                                                                                                                        new AlternativeParser(
+                                                                                                                            new AlternativeParser(
+                                                                                                                                new AlternativeParser(
+                                                                                                                                    new AlternativeParser(
+                                                                                                                                        new AlternativeParser(
+                                                                                                                                            new AlternativeParser(
+                                                                                                                                                new AlternativeParser(
+                                                                                                                                                    new AlternativeParser(
+                                                                                                                                                        new AlternativeParser(
+                                                                                                                                                            new AlternativeParser(
+                                                                                                                                                                new AlternativeParser(
+                                                                                                                                                                    new AlternativeParser(
+                                                                                                                                                                        new AlternativeParser(
+                                                                                                                                                                            new AlternativeParser(
+                                                                                                                                                                                new AlternativeParser(
+                                                                                                                                                                                    new AlternativeParser(
+                                                                                                                                                                                        new AlternativeParser(
+                                                                                                                                                                                            new AlternativeParser(
+                                                                                                                                                                                                new AlternativeParser(
+                                                                                                                                                                                                    new AlternativeParser(
+                                                                                                                                                                                                        new AlternativeParser(
+                                                                                                                                                                                                            new AlternativeParser(
+                                                                                                                                                                                                                new AlternativeParser(
+                                                                                                                                                                                                                    new AlternativeParser(
+                                                                                                                                                                                                                        new AlternativeParser(
+                                                                                                                                                                                                                            new AlternativeParser(
+                                                                                                                                                                                                                                new AlternativeParser(
+                                                                                                                                                                                                                                    new ActionParser("A0",
+                                                                                                                                                                                                                                        new NonterminalParser("Char", "Char", 0)),
+                                                                                                                                                                                                                                    new ActionParser("A1",
+                                                                                                                                                                                                                                        new NonterminalParser("String", "String", 0))),
+                                                                                                                                                                                                                                new ActionParser("A2",
+                                                                                                                                                                                                                                    new NonterminalParser("CharSet", "CharSet", 0))),
+                                                                                                                                                                                                                            new ActionParser("A3",
+                                                                                                                                                                                                                                new NonterminalParser("Keyword", "Keyword", 0))),
+                                                                                                                                                                                                                        new ActionParser("A4",
+                                                                                                                                                                                                                            new NonterminalParser("KeywordList", "KeywordList", 0))),
+                                                                                                                                                                                                                    new ActionParser("A5",
+                                                                                                                                                                                                                        new NonterminalParser("Empty", "Empty", 0))),
+                                                                                                                                                                                                                new ActionParser("A6",
+                                                                                                                                                                                                                    new NonterminalParser("Space", "Space", 0))),
+                                                                                                                                                                                                            new ActionParser("A7",
+                                                                                                                                                                                                                new NonterminalParser("AnyChar", "AnyChar", 0))),
+                                                                                                                                                                                                        new ActionParser("A8",
+                                                                                                                                                                                                            new NonterminalParser("Letter", "Letter", 0))),
+                                                                                                                                                                                                    new ActionParser("A9",
+                                                                                                                                                                                                        new NonterminalParser("Digit", "Digit", 0))),
+                                                                                                                                                                                                new ActionParser("A10",
+                                                                                                                                                                                                    new NonterminalParser("HexDigit", "HexDigit", 0))),
+                                                                                                                                                                                            new ActionParser("A11",
+                                                                                                                                                                                                new NonterminalParser("UpperLetter", "UpperLetter", 0))),
+                                                                                                                                                                                        new ActionParser("A12",
+                                                                                                                                                                                            new NonterminalParser("LowerLetter", "LowerLetter", 0))),
+                                                                                                                                                                                    new ActionParser("A13",
+                                                                                                                                                                                        new NonterminalParser("TitleLetter", "TitleLetter", 0))),
+                                                                                                                                                                                new ActionParser("A14",
+                                                                                                                                                                                    new NonterminalParser("ModifierLetter", "ModifierLetter", 0))),
+                                                                                                                                                                            new ActionParser("A15",
+                                                                                                                                                                                new NonterminalParser("OtherLetter", "OtherLetter", 0))),
+                                                                                                                                                                        new ActionParser("A16",
+                                                                                                                                                                            new NonterminalParser("CasedLetter", "CasedLetter", 0))),
+                                                                                                                                                                    new ActionParser("A17",
+                                                                                                                                                                        new NonterminalParser("Mark", "Mark", 0))),
+                                                                                                                                                                new ActionParser("A18",
+                                                                                                                                                                    new NonterminalParser("NonspacingMark", "NonspacingMark", 0))),
+                                                                                                                                                            new ActionParser("A19",
+                                                                                                                                                                new NonterminalParser("EnclosingMark", "EnclosingMark", 0))),
+                                                                                                                                                        new ActionParser("A20",
+                                                                                                                                                            new NonterminalParser("SpacingMark", "SpacingMark", 0))),
+                                                                                                                                                    new ActionParser("A21",
+                                                                                                                                                        new NonterminalParser("Number", "Number", 0))),
+                                                                                                                                                new ActionParser("A22",
+                                                                                                                                                    new NonterminalParser("DecimalNumber", "DecimalNumber", 0))),
+                                                                                                                                            new ActionParser("A23",
+                                                                                                                                                new NonterminalParser("LetterNumber", "LetterNumber", 0))),
+                                                                                                                                        new ActionParser("A24",
+                                                                                                                                            new NonterminalParser("OtherNumber", "OtherNumber", 0))),
+                                                                                                                                    new ActionParser("A25",
+                                                                                                                                        new NonterminalParser("Punctuation", "Punctuation", 0))),
+                                                                                                                                new ActionParser("A26",
+                                                                                                                                    new NonterminalParser("ConnectorPunctuation", "ConnectorPunctuation", 0))),
+                                                                                                                            new ActionParser("A27",
+                                                                                                                                new NonterminalParser("DashPunctuation", "DashPunctuation", 0))),
+                                                                                                                        new ActionParser("A28",
+                                                                                                                            new NonterminalParser("OpenPunctuation", "OpenPunctuation", 0))),
+                                                                                                                    new ActionParser("A29",
+                                                                                                                        new NonterminalParser("ClosePunctuation", "ClosePunctuation", 0))),
+                                                                                                                new ActionParser("A30",
+                                                                                                                    new NonterminalParser("InitialPunctuation", "InitialPunctuation", 0))),
+                                                                                                            new ActionParser("A31",
+                                                                                                                new NonterminalParser("FinalPunctuation", "FinalPunctuation", 0))),
+                                                                                                        new ActionParser("A32",
+                                                                                                            new NonterminalParser("OtherPunctuation", "OtherPunctuation", 0))),
+                                                                                                    new ActionParser("A33",
+                                                                                                        new NonterminalParser("Symbol", "Symbol", 0))),
+                                                                                                new ActionParser("A34",
+                                                                                                    new NonterminalParser("MathSymbol", "MathSymbol", 0))),
+                                                                                            new ActionParser("A35",
+                                                                                                new NonterminalParser("CurrencySymbol", "CurrencySymbol", 0))),
+                                                                                        new ActionParser("A36",
+                                                                                            new NonterminalParser("ModifierSymbol", "ModifierSymbol", 0))),
+                                                                                    new ActionParser("A37",
+                                                                                        new NonterminalParser("OtherSymbol", "OtherSymbol", 0))),
+                                                                                new ActionParser("A38",
+                                                                                    new NonterminalParser("Separator", "Separator", 0))),
+                                                                            new ActionParser("A39",
+                                                                                new NonterminalParser("SpaceSeparator", "SpaceSeparator", 0))),
+                                                                        new ActionParser("A40",
+                                                                            new NonterminalParser("LineSeparator", "LineSeparator", 0))),
+                                                                    new ActionParser("A41",
+                                                                        new NonterminalParser("ParagraphSeparator", "ParagraphSeparator", 0))),
+                                                                new ActionParser("A42",
+                                                                    new NonterminalParser("Other", "Other", 0))),
+                                                            new ActionParser("A43",
+                                                                new NonterminalParser("Control", "Control", 0))),
+                                                        new ActionParser("A44",
+                                                            new NonterminalParser("Format", "Format", 0))),
+                                                    new ActionParser("A45",
+                                                        new NonterminalParser("Surrogate", "Surrogate", 0))),
+                                                new ActionParser("A46",
+                                                    new NonterminalParser("PrivateUse", "PrivateUse", 0))),
+                                            new ActionParser("A47",
+                                                new NonterminalParser("Unassigned", "Unassigned", 0))),
+                                        new ActionParser("A48",
+                                            new NonterminalParser("Graphic", "Graphic", 0))),
+                                    new ActionParser("A49",
+                                        new NonterminalParser("BaseChar", "BaseChar", 0))),
+                                new ActionParser("A50",
+                                    new NonterminalParser("Alphabetic", "Alphabetic", 0))),
+                            new ActionParser("A51",
+                                new NonterminalParser("IdStart", "IdStart", 0))),
+                        new ActionParser("A52",
+                            new NonterminalParser("IdCont", "IdCont", 0))),
+                    new ActionParser("A53",
                         new NonterminalParser("Range", "Range", 0)))));
             AddRule(new CharRule("Char", GetScope(), Domain.GetNextRuleId(),
                 new ActionParser("A0",
@@ -1377,9 +3673,132 @@ namespace Syntax
             AddRule(new HexDigitRule("HexDigit", GetScope(), Domain.GetNextRuleId(),
                 new ActionParser("A0",
                     new KeywordParser("hexdigit"))));
+            AddRule(new UpperLetterRule("UpperLetter", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("upper_letter"))));
+            AddRule(new LowerLetterRule("LowerLetter", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("lower_letter"))));
+            AddRule(new TitleLetterRule("TitleLetter", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("title_letter"))));
+            AddRule(new ModifierLetterRule("ModifierLetter", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("modifier_letter"))));
+            AddRule(new OtherLetterRule("OtherLetter", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("other_letter"))));
+            AddRule(new CasedLetterRule("CasedLetter", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("cased_letter"))));
+            AddRule(new MarkRule("Mark", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("mark"))));
+            AddRule(new NonspacingMarkRule("NonspacingMark", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("nonspacing_mark"))));
+            AddRule(new SpacingMarkRule("SpacingMark", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("spacing_mark"))));
+            AddRule(new EnclosingMarkRule("EnclosingMark", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("enclosing_mark"))));
+            AddRule(new NumberRule("Number", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("numbr"))));
+            AddRule(new DecimalNumberRule("DecimalNumber", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("decimal_number"))));
+            AddRule(new LetterNumberRule("LetterNumber", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("letter_number"))));
+            AddRule(new OtherNumberRule("OtherNumber", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("other_number"))));
             AddRule(new PunctuationRule("Punctuation", GetScope(), Domain.GetNextRuleId(),
                 new ActionParser("A0",
                     new KeywordParser("punctuation"))));
+            AddRule(new ConnectorPunctuationRule("ConnectorPunctuation", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("connector_punctuation"))));
+            AddRule(new DashPunctuationRule("DashPunctuation", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("dash_punctuation"))));
+            AddRule(new OpenPunctuationRule("OpenPunctuation", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("open_punctuation"))));
+            AddRule(new ClosePunctuationRule("ClosePunctuation", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("close_punctuation"))));
+            AddRule(new InitialPunctuationRule("InitialPunctuation", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("initial_punctuation"))));
+            AddRule(new FinalPunctuationRule("FinalPunctuation", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("final_punctuation"))));
+            AddRule(new OtherPunctuationRule("OtherPunctuation", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("other_punctuation"))));
+            AddRule(new SymbolRule("Symbol", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("symbol"))));
+            AddRule(new MathSymbolRule("MathSymbol", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("math_symbol"))));
+            AddRule(new CurrencySymbolRule("CurrencySymbol", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("currency_symbol"))));
+            AddRule(new ModifierSymbolRule("ModifierSymbol", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("modifier_symbol"))));
+            AddRule(new OtherSymbolRule("OtherSymbol", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("other_symbol"))));
+            AddRule(new SeparatorRule("Separator", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("separator"))));
+            AddRule(new SpaceSeparatorRule("SpaceSeparator", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("space_separator"))));
+            AddRule(new LineSeparatorRule("LineSeparator", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("line_separator"))));
+            AddRule(new ParagraphSeparatorRule("ParagraphSeparator", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("paragraph_separator"))));
+            AddRule(new OtherRule("Other", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("other"))));
+            AddRule(new ControlRule("Control", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("control"))));
+            AddRule(new FormatRule("Format", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("format"))));
+            AddRule(new SurrogateRule("Surrogate", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("surrogate"))));
+            AddRule(new PrivateUseRule("PrivateUse", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("private_use"))));
+            AddRule(new UnassignedRule("Unassigned", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("unassigned"))));
+            AddRule(new GraphicRule("Graphic", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("graphic"))));
+            AddRule(new BaseCharRule("BaseChar", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("basechar"))));
+            AddRule(new AlphabeticRule("Alphabetic", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("alphabetic"))));
+            AddRule(new IdStartRule("IdStart", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("idstart"))));
+            AddRule(new IdContRule("IdCont", GetScope(), Domain.GetNextRuleId(),
+                new ActionParser("A0",
+                    new KeywordParser("idcont"))));
             AddRule(new RangeRule("Range", GetScope(), Domain.GetNextRuleId(),
                 new ActionParser("A0",
                     new SequenceParser(

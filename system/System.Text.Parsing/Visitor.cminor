@@ -10,11 +10,52 @@ namespace System.Text.Parsing
         public virtual void Visit(EmptyParser parser) {}
         public virtual void Visit(SpaceParser parser) {}
         public virtual void Visit(LetterParser parser) {}
+        public virtual void Visit(UpperLetterParser parser) {}
+        public virtual void Visit(LowerLetterParser parser) {}
+        public virtual void Visit(TitleLetterParser parser) {}
+        public virtual void Visit(ModifierLetterParser parser) {}
+        public virtual void Visit(OtherLetterParser parser) {}
+        public virtual void Visit(CasedLetterParser parser) {}
         public virtual void Visit(DigitParser parser) {}
         public virtual void Visit(HexDigitParser parser) {}
+        public virtual void Visit(MarkParser parser) {}
+        public virtual void Visit(NonspacingMarkParser parser) {}
+        public virtual void Visit(SpacingMarkParser parser) {}
+        public virtual void Visit(EnclosingMarkParser parser) {}
+        public virtual void Visit(NumberParser parser) {}
+        public virtual void Visit(DecimalNumberParser parser) {}
+        public virtual void Visit(LetterNumberParser parser) {}
+        public virtual void Visit(OtherNumberParser parser) {}
         public virtual void Visit(PunctuationParser parser) {}
-        public virtual void Visit(RangeParser parser) {}
+        public virtual void Visit(ConnectorPunctuationParser parser) {}
+        public virtual void Visit(DashPunctuationParser parser) {}
+        public virtual void Visit(OpenPunctuationParser parser) {}
+        public virtual void Visit(ClosePunctuationParser parser) {}
+        public virtual void Visit(InitialPunctuationParser parser) {}
+        public virtual void Visit(FinalPunctuationParser parser) {}
+        public virtual void Visit(OtherPunctuationParser parser) {}
+        public virtual void Visit(SymbolParser parser) {}
+        public virtual void Visit(MathSymbolParser parser) {}
+        public virtual void Visit(CurrencySymbolParser parser) {}
+        public virtual void Visit(ModifierSymbolParser parser) {}
+        public virtual void Visit(OtherSymbolParser parser) {}
+        public virtual void Visit(SeparatorParser parser) {}
+        public virtual void Visit(SpaceSeparatorParser parser) {}
+        public virtual void Visit(LineSeparatorParser parser) {}
+        public virtual void Visit(ParagraphSeparatorParser parser) {}
+        public virtual void Visit(OtherParser parser) {}
+        public virtual void Visit(ControlParser parser) {}
+        public virtual void Visit(FormatParser parser) {}
+        public virtual void Visit(SurrogateParser parser) {}
+        public virtual void Visit(PrivateUseParser parser) {}
+        public virtual void Visit(UnassignedParser parser) {}
+        public virtual void Visit(GraphicParser parser) {}
+        public virtual void Visit(BaseCharParser parser) {}
+        public virtual void Visit(AlphabeticParser parser) {}
+        public virtual void Visit(IdStartParser parser) {}
+        public virtual void Visit(IdContParser parser) {}
         public virtual void Visit(AnyCharParser parser) {}
+        public virtual void Visit(RangeParser parser) {}
         public virtual void BeginVisit(OptionalParser parser) {}
         public virtual void EndVisit(OptionalParser parser) {}
         public virtual void BeginVisit(PositiveParser parser) {}

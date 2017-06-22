@@ -47,7 +47,18 @@ namespace Syntax
                             ;
 
         Keyword             ::= keyword_list(identifier,
-                                ["using", "grammar", "start", "skip", "token", "keyword", "keyword_list", "empty", "space", "anychar", "letter", "digit", "hexdigit", "punctuation", "var", "range"])
+                                [   "using", "grammar", "start", "skip", "token", "keyword", "keyword_list", 
+                                    "empty", "space", "anychar", "letter", "digit", "hexdigit", "var", "range",
+                                    "upper_letter", "lower_letter", "title_letter", "modifier_letter", "other_letter",
+                                    "cased_letter", "mark", "nonspacing_mark", "spacing_mark", "enclosing_mark", 
+                                    "number", "decimal_number", "letter_number", "other_number", "punctuation", 
+                                    "connector_punctuation", "dash_punctuation", "open_punctuation", "close_punctuation",
+                                    "initial_punctuation", "final_punctuation", "other_punctuation", 
+                                    "symbol", "math_symbol", "currency_symbol", "modifier_symbol", "other_symbol",
+                                    "separator", "space_separator", "line_separator", "paragraph_separator", 
+                                    "other", "control", "format", "surrogate", "private_use", "unassigned",
+                                    "graphic", "basechar", "alphabetic", "idstart", "idcont"
+                                ])
                             ;
 
         Identifier: string

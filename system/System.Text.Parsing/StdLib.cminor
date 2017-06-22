@@ -669,9 +669,9 @@ namespace System.Text.Parsing
                 public double value;
             }
         }
-        public class numberRule : System.Text.Parsing.RuleParser
+        public class numRule : System.Text.Parsing.RuleParser
         {
-            public numberRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
+            public numRule(string name, Scope enclosingScope, int id, Parser definition) : base(name, enclosingScope, id, definition)
             {
                 ValueTypeName = "double";
             }
@@ -981,7 +981,7 @@ namespace System.Text.Parsing
                 Context context = cast<Context>(parsingData.GetContext(Id));
                 if (matched)
                 {
-                    context.fromx = cast<ulong>(stack.Pop());
+                    context.fromx = cast<uint>(stack.Pop());
                 }
             }
             public void Posto1(Stack<object> stack, ParsingData parsingData, bool matched)
@@ -1019,7 +1019,7 @@ namespace System.Text.Parsing
             public class Context : System.Text.Parsing.Context
             {
                 public char value;
-                public ulong fromx;
+                public uint fromx;
                 public int fromo1;
                 public int fromo2;
                 public int fromo3;
@@ -1342,7 +1342,7 @@ namespace System.Text.Parsing
                             new OptionalParser(
                                 new NonterminalParser("sign", "sign", 0))),
                         new NonterminalParser("digit_sequence", "digit_sequence", 0)))));
-            AddRule(new numberRule("number", GetScope(), Domain.GetNextRuleId(),
+            AddRule(new numRule("num", GetScope(), Domain.GetNextRuleId(),
                 new AlternativeParser(
                     new ActionParser("A0",
                         new NonterminalParser("r", "double", 0)),
@@ -1358,15 +1358,9 @@ namespace System.Text.Parsing
                 new ActionParser("A0",
                     new TokenParser(
                         new SequenceParser(
-                            new AlternativeParser(
-                                new LetterParser(),
-                                new CharParser('_')),
+                            new IdStartParser(),
                             new KleeneStarParser(
-                                new AlternativeParser(
-                                    new AlternativeParser(
-                                        new LetterParser(),
-                                        new DigitParser()),
-                                    new CharParser('_'))))))));
+                                new IdContParser()))))));
             AddRule(new qualified_idRule("qualified_id", GetScope(), Domain.GetNextRuleId(),
                 new ActionParser("A0",
                     new TokenParser(
@@ -1386,7 +1380,7 @@ namespace System.Text.Parsing
                                     new SequenceParser(
                                         new CharSetParser("xX"),
                                         new ActionParser("A0",
-                                            new NonterminalParser("x", "hex", 0))),
+                                            new NonterminalParser("x", "hexdword", 0))),
                                     new ActionParser("A1",
                                         new SequenceParser(
                                             new SequenceParser(

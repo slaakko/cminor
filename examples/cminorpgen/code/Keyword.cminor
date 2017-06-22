@@ -46,8 +46,8 @@ namespace Code
             keywords0.Add("foreach");
             keywords0.Add("case");
             keywords0.Add("catch");
-            keywords0.Add("ulong");
             keywords0.Add("interface");
+            keywords0.Add("ulong");
             keywords0.Add("public");
             keywords0.Add("void");
             keywords0.Add("override");
@@ -58,8 +58,8 @@ namespace Code
             keywords0.Add("short");
             keywords0.Add("while");
             keywords0.Add("double");
-            keywords0.Add("continue");
             keywords0.Add("as");
+            keywords0.Add("continue");
             keywords0.Add("false");
             keywords0.Add("ushort");
             keywords0.Add("uint");

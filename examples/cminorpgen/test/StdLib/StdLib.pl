@@ -30,7 +30,7 @@ namespace System.Text.Parsing
         ureal : double;
         fractional_real;
         exponent_part;
-        number : double;
+        num : double;
         bool : bool;
         identifier : string;
         qualified_id : string;

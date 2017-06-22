@@ -355,6 +355,22 @@ namespace System
         {
             return System.Unicode.IsUpperLetter(c);
         }
+        public static bool IsTitleLetter(char c)
+        {
+            return System.Unicode.IsTitleLetter(c);
+        }
+        public static bool IsModifierLetter(char c)
+        {
+            return System.Unicode.IsModifierLetter(c);
+        }
+        public static bool IsOtherLetter(char c)
+        {
+            return System.Unicode.IsOtherLetter(c);
+        }
+        public static bool IsCasedLetter(char c)
+        {
+            return System.Unicode.IsCasedLetter(c);
+        }
         public static bool IsDigit(char c)
         {
             return System.Unicode.IsAsciiDigit(c);
@@ -367,17 +383,89 @@ namespace System
         {
             return System.Unicode.IsNumber(c);
         }
+        public static bool IsDecimalNumber(char c)
+        {
+            return System.Unicode.IsDecimalNumber(c);
+        }
+        public static bool IsLetterNumber(char c)
+        {
+            return System.Unicode.IsLetterNumber(c);
+        }
+        public static bool IsOtherNumber(char c)
+        {
+            return System.Unicode.IsOtherNumber(c);
+        }
         public static bool IsPunctuation(char c)
         {
             return System.Unicode.IsPunctuation(c);
+        }
+        public static bool IsConnectorPunctuation(char c)
+        {
+            return System.Unicode.IsConnectorPunctuation(c);
+        }
+        public static bool IsDashPunctuation(char c)
+        {
+            return System.Unicode.IsDashPunctuation(c);
+        }
+        public static bool IsOpenPunctuation(char c)
+        {
+            return System.Unicode.IsOpenPunctuation(c);
+        }
+        public static bool IsClosePunctuation(char c)
+        {
+            return System.Unicode.IsClosePunctuation(c);
+        }
+        public static bool IsInitialPunctuation(char c)
+        {
+            return System.Unicode.IsInitialPunctuation(c);
+        }
+        public static bool IsFinalPunctuation(char c)
+        {
+            return System.Unicode.IsFinalPunctuation(c);
+        }
+        public static bool IsOtherPunctuation(char c)
+        {
+            return System.Unicode.IsOtherPunctuation(c);
         }
         public static bool IsSymbol(char c)
         {
             return System.Unicode.IsSymbol(c);
         }
+        public static bool IsMathSymbol(char c)
+        {
+            return System.Unicode.IsMathSymbol(c);
+        }
+        public static bool IsCurrencySymbol(char c)
+        {
+            return System.Unicode.IsCurrencySymbol(c);
+        }
+        public static bool IsModifierSymbol(char c)
+        {
+            return System.Unicode.IsModifierSymbol(c);
+        }
+        public static bool IsOtherSymbol(char c)
+        {
+            return System.Unicode.IsOtherSymbol(c);
+        }
         public static bool IsSeparator(char c)
         {
             return System.Unicode.IsSeparator(c);
+        }
+        public static bool IsSpaceSeparator(char c)
+        {
+            return System.Unicode.IsSpaceSeparator(c);
+        }
+        public static bool IsLineSeparator(char c)
+        {
+            return System.Unicode.IsLineSeparator(c);
+        }
+        public static bool IsParagraphSeparator(char c)
+        {
+            return System.Unicode.IsParagraphSeparator(c);
+        }
+        public static bool IsOther(char c)
+        {
+            return System.Unicode.IsOther(c);
         }
         public static bool IsControl(char c)
         {
@@ -387,6 +475,18 @@ namespace System
         {
             return System.Unicode.IsFormat(c);
         }
+        public static bool IsSurrogate(char c)
+        {
+            return System.Unicode.IsSurrogate(c);
+        }
+        public static bool IsPrivateUse(char c)
+        {
+            return System.Unicode.IsPrivateUse(c);
+        }
+        public static bool IsUnassigned(char c)
+        {
+            return System.Unicode.IsUnassigned(c);
+        }
         public static bool IsGraphic(char c)
         {
             return System.Unicode.IsGraphic(c);
@@ -395,9 +495,33 @@ namespace System
         {
             return System.Unicode.IsBaseChar(c);
         }
+        public static bool IsAlphabetic(char c)
+        {
+            return System.Unicode.IsAlphabetic(c);
+        }
+        public static bool IsIdStart(char c)
+        {
+            return System.Unicode.IsIdStart(c);
+        }
+        public static bool IsIdCont(char c)
+        {
+            return System.Unicode.IsIdCont(c);
+        }
         public static bool IsMark(char c)
         {
             return System.Unicode.IsMark(c);
+        }
+        public static bool IsNonspacingMark(char c)
+        {
+            return System.Unicode.IsNonspacingMark(c);
+        }
+        public static bool IsSpacingMark(char c)
+        {
+            return System.Unicode.IsSpacingMark(c);
+        }
+        public static bool IsEnclosingMark(char c)
+        {
+            return System.Unicode.IsEnclosingMark(c);
         }
         public static bool IsCombining(char c)
         {

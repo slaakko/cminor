@@ -438,6 +438,30 @@ namespace Syntax
         {
             formatter.Write("new LetterParser()");
         }
+        public override void Visit(UpperLetterParser parser) 
+        {
+            formatter.Write("new UpperLetterParser()");
+        }
+        public override void Visit(LowerLetterParser parser)
+        {
+            formatter.Write("new LowerLetterParser()");
+        }
+        public override void Visit(TitleLetterParser parser) 
+        {
+            formatter.Write("new TitleLetterParser()");
+        }
+        public override void Visit(ModifierLetterParser parser) 
+        {
+            formatter.Write("new ModifierLetterParser()");
+        }
+        public override void Visit(OtherLetterParser parser) 
+        {
+            formatter.Write("new OtherLetterParser()");
+        }
+        public override void Visit(CasedLetterParser parser) 
+        {
+            formatter.Write("new CasedLetterParser()");
+        }
         public override void Visit(DigitParser parser)
         {
             formatter.Write("new DigitParser()");
@@ -446,17 +470,157 @@ namespace Syntax
         {
             formatter.Write("new HexDigitParser()");
         }
+        public override void Visit(MarkParser parser) 
+        {
+            formatter.Write("new MarkParser()");
+        }
+        public override void Visit(NonspacingMarkParser parser) 
+        {
+            formatter.Write("new NonspacingMarkParser()");
+        }
+        public override void Visit(SpacingMarkParser parser) 
+        {
+            formatter.Write("new SpacingMarkParser()");
+        }
+        public override void Visit(EnclosingMarkParser parser) 
+        {
+            formatter.Write("new EnclosingMarkParser()");
+        }
+        public override void Visit(NumberParser parser) 
+        {
+            formatter.Write("new NumberParser()");
+        }
+        public override void Visit(DecimalNumberParser parser) 
+        {
+            formatter.Write("new DecimalNumberParser()");
+        }
+        public override void Visit(LetterNumberParser parser) 
+        {
+            formatter.Write("new LetterNumberParser()");
+        }
+        public override void Visit(OtherNumberParser parser) 
+        {
+            formatter.Write("new OtherNumberParser()");
+        }
         public override void Visit(PunctuationParser parser)
         {
             formatter.Write("new PunctuationParser()");
         }
-        public override void Visit(RangeParser parser)
+        public override void Visit(ConnectorPunctuationParser parser) 
         {
-            formatter.Write("new RangeParser(" + parser.RangeStart.ToString() + "u, " + parser.RangeEnd.ToString() + "u)");
+            formatter.Write("new ConnectorPunctuationParser()");
+        }
+        public override void Visit(DashPunctuationParser parser) 
+        {
+            formatter.Write("new DashPunctuationParser()");
+        }
+        public override void Visit(OpenPunctuationParser parser) 
+        {
+            formatter.Write("new OpenPunctuationParser()");
+        }
+        public override void Visit(ClosePunctuationParser parser) 
+        {
+            formatter.Write("new ClosePunctuationParser()");
+        }
+        public override void Visit(InitialPunctuationParser parser) 
+        {
+            formatter.Write("new InitialPunctuationParser()");
+        }
+        public override void Visit(FinalPunctuationParser parser) 
+        {
+            formatter.Write("new FinalPunctuationParser()");
+        }
+        public override void Visit(OtherPunctuationParser parser) 
+        {
+            formatter.Write("new OtherPunctuationParser()");
+        }
+        public override void Visit(SymbolParser parser) 
+        {
+            formatter.Write("new SymbolParser()");
+        }
+        public override void Visit(MathSymbolParser parser) 
+        {
+            formatter.Write("new MathSymbolParser()");
+        }
+        public override void Visit(CurrencySymbolParser parser) 
+        {
+            formatter.Write("new CurrencySymbolParser()");
+        }
+        public override void Visit(ModifierSymbolParser parser) 
+        {
+            formatter.Write("new ModifierSymbolParser()");
+        }
+        public override void Visit(OtherSymbolParser parser) 
+        {
+            formatter.Write("new OtherSymbolParser()");
+        }
+        public override void Visit(SeparatorParser parser) 
+        {
+            formatter.Write("new SeparatorParser()");
+        }
+        public override void Visit(SpaceSeparatorParser parser) 
+        {
+            formatter.Write("new SpaceSeparatorParser()");
+        }
+        public override void Visit(LineSeparatorParser parser) 
+        {
+            formatter.Write("new LineSeparatorParser()");
+        }
+        public override void Visit(ParagraphSeparatorParser parser) 
+        {
+            formatter.Write("new ParagraphSeparatorParser()");
+        }
+        public override void Visit(OtherParser parser) 
+        {
+            formatter.Write("new OtherParser()");
+        }
+        public override void Visit(ControlParser parser) 
+        {
+            formatter.Write("new ControlParser()");
+        }
+        public override void Visit(FormatParser parser) 
+        {
+            formatter.Write("new FormatParser()");
+        }
+        public override void Visit(SurrogateParser parser) 
+        {
+            formatter.Write("new SurrogateParser()");
+        }
+        public override void Visit(PrivateUseParser parser) 
+        {
+            formatter.Write("new PrivateUseParser()");
+        }
+        public override void Visit(UnassignedParser parser) 
+        {
+            formatter.Write("new UnassignedParser()");
+        }
+        public override void Visit(GraphicParser parser) 
+        {
+            formatter.Write("new GraphicParser()");
+        }
+        public override void Visit(BaseCharParser parser) 
+        {
+            formatter.Write("new BaseCharParser()");
+        }
+        public override void Visit(AlphabeticParser parser) 
+        {
+            formatter.Write("new AlphabeticParser()");
+        }
+        public override void Visit(IdStartParser parser) 
+        {
+            formatter.Write("new IdStartParser()");
+        }
+        public override void Visit(IdContParser parser) 
+        {
+            formatter.Write("new IdContParser()");
         }
         public override void Visit(AnyCharParser parser)
         {
             formatter.Write("new AnyCharParser()");
+        }
+        public override void Visit(RangeParser parser)
+        {
+            formatter.Write("new RangeParser(" + parser.RangeStart.ToString() + "u, " + parser.RangeEnd.ToString() + "u)");
         }
         public override void Visit(NonterminalParser parser)
         {
