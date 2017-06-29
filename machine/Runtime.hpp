@@ -6,12 +6,15 @@
 #ifndef CMINOR_MACHINE_RUNTIME_INCLUDED
 #define CMINOR_MACHINE_RUNTIME_INCLUDED
 #include <cminor/machine/MachineApi.hpp>
+#include <cminor/util/Defines.hpp>
 #include <cminor/machine/CminorException.hpp>
 #include <stdint.h>
 
 namespace cminor { namespace machine {
 
 MACHINE_API void SetTrace();
+
+#ifdef SHADOW_STACK_GC
 
 class Function;
 
@@ -24,15 +27,21 @@ struct MACHINE_API FunctionStackEntry
     uint64_t** gcEntry;         // 4: pointer to array of GC root pointers (array contains numGcRoots GC root pointers)
 };
 
+#endif
+
+#ifdef SHADOW_STACK_GC
 extern "C" MACHINE_API FunctionStackEntry* RtGetFunctionStack();
+#endif
 extern "C" MACHINE_API void RtThrowException(uint64_t exceptionObjectReference);
 extern "C" MACHINE_API bool RtHandleException(void* classDataPtr);
 extern "C" MACHINE_API uint64_t RtGetException();
 extern "C" MACHINE_API void RtDisposeException();
 
+#ifdef SHADOW_STACK_GC
 extern "C" MACHINE_API void RtEnterFunction(void* functionStackEntry);
 extern "C" MACHINE_API void RtLeaveFunction(void* functionStackEntry);
 extern "C" MACHINE_API void RtUnwindFunctionStack(void* functionStackEntry);
+#endif
 
 extern "C" MACHINE_API int8_t RtLoadFieldSb(uint64_t objectReference, int32_t fieldIndex);
 extern "C" MACHINE_API uint8_t RtLoadFieldBy(uint64_t objectReference, int32_t fieldIndex);

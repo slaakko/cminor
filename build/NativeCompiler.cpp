@@ -4,10 +4,13 @@
 // =================================
 
 #include <cminor/build/NativeCompiler.hpp>
+#include <cminor/util/Defines.hpp>
+#ifdef STACK_WALK_GC
+#include <cminor/build/NativeGC.hpp>
+#endif 
 #include <cminor/machine/MachineFunctionVisitor.hpp>
 #include <cminor/machine/Machine.hpp>
 #include <cminor/machine/Class.hpp>
-//#include <cminor/machine/StackMap.hpp>
 #include <cminor/symbols/SymbolReader.hpp>
 #include <cminor/symbols/SymbolWriter.hpp>
 #include <cminor/util/Path.hpp>
@@ -53,7 +56,7 @@
 #include <llvm/Analysis/TargetTransformInfo.h>
 #include <llvm/Analysis/TargetLibraryInfo.h>
 #include <llvm/Object/ObjectFile.h>
-
+#include <llvm/CodeGen/TargetPassConfig.h>
 #ifdef _WIN32
 #pragma warning(default:4267)
 #pragma warning(default:4244)
@@ -281,20 +284,18 @@ private:
     llvm::AllocaInst* gcEntry;
     std::unordered_map<int32_t, int32_t> temporaryGcRootMap;
     std::unordered_set<Function*> inlinedFunctions;
+    std::unordered_map<const llvm::Function*, Function*> llvmFunctionMap;
     uint64_t nextStackMapRecordId;
     void ScanForInlineCandidates(Function& function);
     bool MakeInlineDecisionFor(Function& function);
     void GenerateInlineDefinitionFor(Function& function);
     void CreateDllMain();
     void GenerateObjectFile(const std::string& assemblyObjectFilePath);
-    //void ReadStackMapsFromSharedLibraryFile(const std::string& sharedibraryFilePath);
-    //void ReadStackMapSection(const uint8_t* begin, const uint8_t* end);
     void Link(const std::string& assemblyObjectFilePath, std::string& sharedibraryFilePath);
     void LinkWindows(const std::string& assemblyObjectFilePath, std::string& sharedLibraryFilePath);
     void LinkLinux(const std::string& assemblyObjectFilePath, std::string& sharedLibraryFilePath);
     void CreateLocalVariables();
     void CreateVariablesForTemporaryGcRoots();
-    //void CreateStackMap();
     void StoreTemporaryGcRoot(Instruction& instruction);
     llvm::TargetOptions GetTargetOptions();
     void SetPersonalityFunction();
@@ -355,6 +356,7 @@ NativeCompilerImpl::NativeCompilerImpl() : assembly(nullptr), builder(context), 
     initializeTarget(*passRegistry);
     initializeCodeGen(*passRegistry);
     InitMaps();
+    link_cminor_gc();
 }
 
 std::string NativeCompilerImpl::MangleFunctionName(const Function& function) const
@@ -433,6 +435,12 @@ llvm::TargetOptions NativeCompilerImpl::GetTargetOptions()
 
 void NativeCompilerImpl::CreateLocalVariables()
 {
+#ifdef STACK_WALK_GC
+    llvm::Type* type = GetType(ValueType::objectReference);
+    llvm::AllocaInst* allocaInst = builder.CreateAlloca(type);
+    gcRoots.push_back(allocaInst);
+    isGCFun = true;
+#endif
     for (ValueType lt : function->LocalTypes())
     {
         llvm::Type* type = GetType(lt);
@@ -463,28 +471,6 @@ void NativeCompilerImpl::CreateVariablesForTemporaryGcRoots()
         }
     }
 }
-
-/*
-void NativeCompilerImpl::CreateStackMap()
-{
-    std::vector<llvm::Type*> stackMapParamTypes;
-    stackMapParamTypes.push_back(GetType(ValueType::ulongType));
-    stackMapParamTypes.push_back(GetType(ValueType::intType));
-    llvm::FunctionType* stackMapFunctionType = llvm::FunctionType::get(GetType(ValueType::none), stackMapParamTypes, true);
-    llvm::Function* stackMapIntrinsic = cast<llvm::Function>(module->getOrInsertFunction("llvm.experimental.stackmap", stackMapFunctionType));
-    ImportFunction(stackMapIntrinsic);
-    ArgVector args;
-    uint64_t stackMapRecordId = ++nextStackMapRecordId;
-    args.push_back(builder.getInt64(stackMapRecordId));
-    function->SetStackMapRecordId(stackMapRecordId);
-    args.push_back(builder.getInt32(0));
-    for (AllocaInst* gcRoot : gcRoots)
-    {
-        args.push_back(gcRoot);
-    }
-    builder.CreateCall(stackMapIntrinsic, args);
-}
-*/
 
 void NativeCompilerImpl::StoreTemporaryGcRoot(Instruction& instruction)
 {
@@ -1095,7 +1081,6 @@ void NativeCompilerImpl::EndModule()
     }
     std::string sharedLibraryFilePath;
     Link(assemblyObjectFilePath, sharedLibraryFilePath);
-    //ReadStackMapsFromSharedLibraryFile(sharedLibraryFilePath);
 }
 
 void NativeCompilerImpl::CreateDllMain()
@@ -1141,6 +1126,13 @@ void NativeCompilerImpl::GenerateObjectFile(const std::string& assemblyObjectFil
     legacy::PassManager passManager;
     std::error_code errorCode;
     raw_fd_ostream objectFile(assemblyObjectFilePath, errorCode, sys::fs::F_None);
+    std::unique_ptr<llvm::raw_os_ostream> os;
+    if (listStream)
+    {
+        os.reset(new llvm::raw_os_ostream(*listStream));
+    }
+    CminorGCMachineFunctionPass* gcMachineFunctionPass = new CminorGCMachineFunctionPass(&llvmFunctionMap, listStream.get(), os.get());
+    SetCustomGCPass(gcMachineFunctionPass);
     if (targetMachine->addPassesToEmitFile(passManager, objectFile, TargetMachine::CGFT_ObjectFile))
     {
         throw std::runtime_error("NativeCompiler: cannot emit object code file '" + assemblyObjectFilePath + "' (llvm::TargetMachine::addPassesToEmitFile failed).");
@@ -1545,11 +1537,13 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     }
     llvm::FunctionType* funType = llvm::FunctionType::get(returnType, paramTypes, false);
     fun = cast<llvm::Function>(module->getOrInsertFunction(mangledFunctionName, funType));
+    llvmFunctionMap[fun] = &function;
     if (mode == Mode::normalMode)
     {
         // export all functions...
-        //ExportFunction(fun); 
-        //assembly->AddExportedFunction(function.CallName());
+        ExportFunction(fun); 
+        assembly->AddExportedFunction(function.CallName());
+/*
         if (function.IsExported())
         {
             ExportFunction(fun);
@@ -1559,6 +1553,7 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
         {
             fun->setLinkage(llvm::GlobalValue::LinkageTypes::InternalLinkage);
         }
+*/
         if (function.IsMain())
         {
             fun->setAttributes(mainFunctionAttributes);
@@ -1571,6 +1566,10 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
         {
             fun->setAttributes(nounwindFunctionAttributes);
         }
+#ifdef STACK_WALK_GC
+        fun->addFnAttr("no-frame-pointer-elim", "true");
+        fun->addFnAttr("no-frame-pointer-elim-non-leaf", "true");
+#endif
     }
     else if (mode == Mode::inlineMode)
     {
@@ -1583,6 +1582,8 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
         {
             fun->setAttributes(nounwindInlineFunctionAttributes);
         }
+        fun->addFnAttr("no-frame-pointer-elim", "true");
+        fun->addFnAttr("no-frame-pointer-elim-non-leaf", "true");
     }
     else
     {
@@ -1601,24 +1602,36 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
     gcRoots.clear();
     CreateLocalVariables();
     CreateVariablesForTemporaryGcRoots();
-    //CreateStackMap();
     gcEntry = nullptr;
-    if (isGCFun)
+#ifdef STACK_WALK_GC
+    fun->setGC("cminor-gc");
+    llvm::Function* gcrootIntrinsic = cast<llvm::Function>(module->getOrInsertFunction("llvm.gcroot", GetType(ValueType::none), 
+        llvm::PointerType::get(llvm::PointerType::get(GetType(ValueType::byteType), 0), 0), llvm::PointerType::get(GetType(ValueType::byteType), 0), nullptr));
+    ImportFunction(gcrootIntrinsic);
+    for (llvm::AllocaInst* gcRoot : gcRoots)
     {
-        std::vector<llvm::Type*> gcRootPtrTypes;
-        for (llvm::AllocaInst* gcRoot : gcRoots)
-        {
-            gcRootPtrTypes.push_back(llvm::PointerType::get(GetType(ValueType::objectReference), 0));
-        }
-        llvm::StructType* gcEntryType = llvm::StructType::get(context, gcRootPtrTypes);
-        gcEntry = builder.CreateAlloca(gcEntryType);
+        ArgVector args;
+        args.push_back(gcRoot);
+        args.push_back(llvm::Constant::getNullValue(llvm::PointerType::get(GetType(ValueType::byteType), 0)));
+        builder.CreateCall(gcrootIntrinsic, args);
     }
+#endif
+    std::vector<llvm::Type*> gcRootPtrTypes;
+    for (llvm::AllocaInst* gcRoot : gcRoots)
+    {
+        gcRootPtrTypes.push_back(llvm::PointerType::get(GetType(ValueType::objectReference), 0));
+    }
+#ifdef SHADOW_STACK_GC
+    llvm::StructType* gcEntryType = llvm::StructType::get(context, gcRootPtrTypes);
+    gcEntry = builder.CreateAlloca(gcEntryType);
+#endif
     int ne = function.NumExceptionBlocks();
     for (int i = 0; i < ne; ++i)
     {
         llvm::AllocaInst* exceptionObjectVar = builder.CreateAlloca(PointerType::get(GetType(ValueType::byteType), 0));
         exceptionObjectVariables[i] = exceptionObjectVar;
     }
+#ifdef SHADOW_STACK_GC
     llvm::StructType* functionStackEntryType = llvm::StructType::get(
         llvm::PointerType::get(GetType(ValueType::byteType), 0),        // field 00: (void*)FunctionStackEntry* next : pointer to caller's function stack entry, RtEnterFunction sets
         llvm::PointerType::get(GetType(ValueType::byteType), 0),        // field 01: (void*)Function* function       : pointer to IL function
@@ -1628,6 +1641,9 @@ void NativeCompilerImpl::BeginVisitFunction(Function& function)
                                                                         // field 04: uint64_t** gcEntry              : pointer to array of GC root pointers
         nullptr);
     functionStackEntry = builder.CreateAlloca(functionStackEntryType);
+#else
+    functionStackEntry = nullptr;
+#endif
     functionConstantPool = &function.GetConstantPool();
     currentBasicBlock = entryBlock;
     functionPtrVar = GetFunctionPtrVar(&function);
@@ -1999,7 +2015,7 @@ void NativeCompilerImpl::VisitLoadFieldInst(int32_t fieldIndex, ValueType fieldT
         }
         case ValueType::objectReference:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldOb", GetType(ValueType::ulongType), GetType(ValueType::objectReference), GetType(ValueType::intType),
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldOb", GetType(ValueType::objectReference), GetType(ValueType::objectReference), GetType(ValueType::intType),
                 nullptr));
             break;
         }
@@ -2388,7 +2404,8 @@ void NativeCompilerImpl::VisitLoadConstantInst(int32_t constantIndex)
         }
         case ValueType::objectReference:
         {
-            valueStack.Push(builder.getInt64(value.Value()));
+            Assert(value.Value() == 0, "non-null object reference constant");
+            valueStack.Push(llvm::Constant::getNullValue(llvm::Type::getInt8PtrTy(context)));
             break;
         }
         default:
@@ -2416,19 +2433,22 @@ void NativeCompilerImpl::VisitReceiveInst(ReceiveInst& instruction)
         llvm::AllocaInst* gcRoot = gcRoots[i];
         if (args.find(gcRoot) == args.cend())
         {
-            builder.CreateStore(builder.getInt64(0), gcRoot);
+            builder.CreateStore(llvm::Constant::getNullValue(llvm::Type::getInt8PtrTy(context)), gcRoot);
         }
+#ifdef SHADOW_STACK_GC
         ArgVector gcEntryI;
         gcEntryI.push_back(builder.getInt32(0));
         gcEntryI.push_back(builder.getInt32(i));
         llvm::Value* gcRootPtrPtr = builder.CreateGEP(nullptr, gcEntry, gcEntryI);
         builder.CreateStore(gcRoot, gcRootPtrPtr);
+#endif
     }
     EnterFunction();
 }
 
 void NativeCompilerImpl::EnterFunction()
 {
+#ifdef SHADOW_STACK_GC
     ArgVector fse01;
     fse01.push_back(builder.getInt32(0));
     fse01.push_back(builder.getInt32(1));
@@ -2460,26 +2480,39 @@ void NativeCompilerImpl::EnterFunction()
     ArgVector args;
     args.push_back(builder.CreateBitCast(functionStackEntry, llvm::PointerType::get(GetType(ValueType::byteType), 0)));
     builder.CreateCall(rtEnterFunction, args);
+#endif
+#ifdef STACK_WALK_GC
+    SetCurrentLineNumber(function->GetFirstSourceLine());
+#endif
 }
 
 void NativeCompilerImpl::LeaveFunction()
 {
+#ifdef SHADOW_STACK_GC
     llvm::Function* rtLeaveFunction = cast<llvm::Function>(module->getOrInsertFunction("RtLeaveFunction", GetType(ValueType::none), 
         llvm::PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtLeaveFunction);
     ArgVector args;
     args.push_back(builder.CreateBitCast(functionStackEntry, llvm::PointerType::get(GetType(ValueType::byteType), 0)));
     builder.CreateCall(rtLeaveFunction, args);
+#endif
 }
 
 void NativeCompilerImpl::SetCurrentLineNumber(uint32_t lineNumber)
 {
+#ifdef SHADOW_STACK_GC
     if (lineNumber == uint32_t(-1)) return;
     ArgVector fse02;
     fse02.push_back(builder.getInt32(0));
     fse02.push_back(builder.getInt32(2));
     llvm::Value* fseLineNumberPtr = builder.CreateGEP(nullptr, functionStackEntry, fse02); // functionStackEntry field 02: int32_t lineNumber
     builder.CreateStore(builder.getInt32(lineNumber), fseLineNumberPtr);
+#endif
+#ifdef STACK_WALK_GC
+    if (lineNumber == uint32_t(-1)) return;
+    llvm::Value* lineNumberValue = builder.getInt32(lineNumber);
+    builder.CreateStore(builder.CreateIntToPtr(lineNumberValue, GetType(ValueType::objectReference)), gcRoots[0]);
+#endif
 }
 
 void NativeCompilerImpl::VisitConversionBaseInst(ConversionBaseInst& instruction)
@@ -2775,7 +2808,7 @@ void NativeCompilerImpl::VisitVirtualCallInst(VirtualCallInst& instruction)
     resolveArgs.push_back(llvm::ConstantInt::get(GetIntegerType(ValueType::uintType), vmtIndex));
     llvm::Function* resolveVirtualFunctionCallAddress = cast<llvm::Function>(module->getOrInsertFunction("RtResolveVirtualFunctionCallAddress", 
         PointerType::get(GetType(ValueType::byteType), 0),
-        GetType(ValueType::ulongType), GetType(ValueType::intType), 
+        GetType(ValueType::objectReference), GetType(ValueType::intType), 
         nullptr));
     ImportFunction(resolveVirtualFunctionCallAddress);
     CreateCall(resolveVirtualFunctionCallAddress, resolveArgs, true);
@@ -2810,11 +2843,12 @@ void NativeCompilerImpl::VisitInterfaceCallInst(InterfaceCallInst& instruction)
     ArgVector resolveArgs;
     resolveArgs.push_back(args[0]);
     uint32_t imtIndex = instruction.ImtIndex();
-    AllocaInst* receiver = builder.CreateAlloca(GetType(ValueType::ulongType));
+    AllocaInst* receiver = new llvm::AllocaInst(GetType(ValueType::objectReference));
+    InsertAllocaIntoEntryBlock(receiver);
     resolveArgs.push_back(llvm::ConstantInt::get(GetIntegerType(ValueType::uintType), imtIndex));
     resolveArgs.push_back(receiver);
     llvm::Function* rtResolveInterfaceCallAddress = cast<llvm::Function>(module->getOrInsertFunction("RtResolveInterfaceCallAddress", PointerType::get(GetType(ValueType::byteType), 0),
-        GetType(ValueType::ulongType), GetType(ValueType::intType), PointerType::get(GetType(ValueType::ulongType), 0), nullptr));
+        GetType(ValueType::objectReference), GetType(ValueType::intType), PointerType::get(GetType(ValueType::objectReference), 0), nullptr));
     ImportFunction(rtResolveInterfaceCallAddress);
     CreateCall(rtResolveInterfaceCallAddress, resolveArgs, true);
     llvm::Value* functionAddress = valueStack.Pop();
@@ -2839,7 +2873,8 @@ void NativeCompilerImpl::VisitVmCallInst(VmCallInst& instruction)
     vmCallContextElementTypes.push_back(GetType(ValueType::byteType));
     vmCallContextElementTypes.push_back(GetType(ValueType::ulongType));
     llvm::StructType* vmCallContextType = llvm::StructType::get(context, vmCallContextElementTypes);
-    AllocaInst* vmCallContext = builder.CreateAlloca(vmCallContextType);
+    AllocaInst* vmCallContext = new llvm::AllocaInst(vmCallContextType);
+    InsertAllocaIntoEntryBlock(vmCallContext);
     ArgVector cc0;
     cc0.push_back(builder.getInt32(0));
     cc0.push_back(builder.getInt32(0));
@@ -2850,7 +2885,8 @@ void NativeCompilerImpl::VisitVmCallInst(VmCallInst& instruction)
     cc1.push_back(builder.getInt32(0));
     cc1.push_back(builder.getInt32(1));
     llvm::Value* localTypesPtr = builder.CreateGEP(nullptr, vmCallContext, cc1);
-    AllocaInst* localTypes = builder.CreateAlloca(GetType(ValueType::byteType), builder.getInt32(numLocals));
+    AllocaInst* localTypes = new llvm::AllocaInst(GetType(ValueType::byteType), builder.getInt32(numLocals));
+    InsertAllocaIntoEntryBlock(localTypes);
     for (uint32_t i = 0; i < numLocals; ++i)
     {
         ArgVector lti;
@@ -2860,7 +2896,8 @@ void NativeCompilerImpl::VisitVmCallInst(VmCallInst& instruction)
         builder.CreateStore(builder.getInt8(uint8_t(localType)), localTypePtr);
     }
     builder.CreateStore(localTypes, localTypesPtr);
-    AllocaInst* localsAlloca = builder.CreateAlloca(GetType(ValueType::ulongType), builder.getInt32(numLocals));
+    AllocaInst* localsAlloca = new llvm::AllocaInst(GetType(ValueType::ulongType), builder.getInt32(numLocals));
+    InsertAllocaIntoEntryBlock(localsAlloca);
     for (uint32_t i = 0; i < numLocals; ++i)
     {
         ArgVector la;
@@ -2945,20 +2982,21 @@ void NativeCompilerImpl::VisitDelegateCallInst(DelegateCallInst& instruction)
 void NativeCompilerImpl::VisitClassDelegateCallInst(ClassDelegateCallInst& instruction)
 {
     llvm::Value* classDlg = valueStack.Pop();
-    AllocaInst* classObjectAlloca = builder.CreateAlloca(GetType(ValueType::ulongType));
+    AllocaInst* classObjectAlloca = new llvm::AllocaInst(GetType(ValueType::objectReference));
+    InsertAllocaIntoEntryBlock(classObjectAlloca);
     ArgVector resolveArgs;
     resolveArgs.push_back(classDlg);
     resolveArgs.push_back(classObjectAlloca);
     llvm::Function* rtResolveClassDelegateCallAddress = cast<llvm::Function>(module->getOrInsertFunction("RtResolveClassDelegateCallAddress", PointerType::get(GetType(ValueType::byteType), 0),
-        GetType(ValueType::ulongType), 
-        PointerType::get(GetType(ValueType::ulongType), 0), 
+        GetType(ValueType::objectReference),
+        PointerType::get(GetType(ValueType::objectReference), 0),
         nullptr));
     ImportFunction(rtResolveClassDelegateCallAddress);
     CreateCall(rtResolveClassDelegateCallAddress, resolveArgs, true);
     llvm::Value* classDelegateCallAddress = valueStack.Pop();
     llvm::Type* returnType = GetType(instruction.GetFunctionType().ReturnType());
     std::vector<llvm::Type*> paramTypes;
-    paramTypes.push_back(GetType(ValueType::ulongType));
+    paramTypes.push_back(GetType(ValueType::objectReference));
     for (ValueType pvt : instruction.GetFunctionType().ParameterTypes())
     {
         llvm::Type* paramType = GetType(pvt);
@@ -2987,7 +3025,7 @@ void NativeCompilerImpl::VisitSetClassDataInst(SetClassDataInst& instruction)
 {
     llvm::Value* objectReference = valueStack.Pop();
     llvm::Function* rtSetClassDataPtr = cast<llvm::Function>(module->getOrInsertFunction("RtSetClassDataPtr", 
-        GetType(ValueType::none), GetType(ValueType::ulongType), PointerType::get(GetType(ValueType::byteType), 0), nullptr));
+        GetType(ValueType::none), GetType(ValueType::objectReference), PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtSetClassDataPtr);
     ArgVector args;
     args.push_back(objectReference);
@@ -3040,7 +3078,7 @@ void NativeCompilerImpl::VisitLoadStringCharInst(LoadStringCharInst& instruction
     llvm::Value* index = valueStack.Pop();
     llvm::Value* str = valueStack.Pop();
     llvm::Function* rtLoadStringChar = cast<llvm::Function>(module->getOrInsertFunction("RtLoadStringChar", GetType(ValueType::charType), GetType(ValueType::intType), 
-        GetType(ValueType::ulongType), nullptr));
+        GetType(ValueType::objectReference), nullptr));
     ImportFunction(rtLoadStringChar);
     ArgVector args;
     args.push_back(index);
@@ -3382,12 +3420,14 @@ void NativeCompilerImpl::VisitBeginCatchInstWindows(BeginCatchInst& instruction)
     int exceptionVarIndex = catchBlock->GetExceptionVarIndex();
     CreateCall(rtGetException, getExceptionArgs, true);
     builder.CreateStore(valueStack.Pop(), locals[exceptionVarIndex]);
+#ifdef SHADOW_STACK_GC
     llvm::Function* rtUnwindFunctionStack = cast<llvm::Function>(module->getOrInsertFunction("RtUnwindFunctionStack", GetType(ValueType::none), 
         PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtUnwindFunctionStack);
     ArgVector unwindFunctionStackArgs;
     unwindFunctionStackArgs.push_back(builder.CreateBitCast(functionStackEntry, llvm::PointerType::get(GetType(ValueType::byteType), 0)));
     CreateCall(rtUnwindFunctionStack, unwindFunctionStackArgs, false);
+#endif
 }
 
 void NativeCompilerImpl::VisitBeginCatchInstLinux(BeginCatchInst& instruction)
@@ -3440,12 +3480,14 @@ void NativeCompilerImpl::VisitBeginCatchInstLinux(BeginCatchInst& instruction)
     int exceptionVarIndex = catchBlock->GetExceptionVarIndex();
     CreateCall(rtGetException, getExceptionArgs, true);
     builder.CreateStore(valueStack.Pop(), locals[exceptionVarIndex]);
+#ifdef SHADOW_STACK_GC
     llvm::Function* rtUnwindFunctionStack = cast<llvm::Function>(module->getOrInsertFunction("RtUnwindFunctionStack", GetType(ValueType::none),
         PointerType::get(GetType(ValueType::byteType), 0), nullptr));
     ImportFunction(rtUnwindFunctionStack);
     ArgVector unwindFunctionStackArgs;
     unwindFunctionStackArgs.push_back(builder.CreateBitCast(functionStackEntry, llvm::PointerType::get(GetType(ValueType::byteType), 0)));
     CreateCall(rtUnwindFunctionStack, unwindFunctionStackArgs, false);
+#endif
 }
 
 void NativeCompilerImpl::VisitEndCatchInst(EndCatchInst& instruction)
@@ -4235,7 +4277,8 @@ void NativeCompilerImpl::VisitCreateLocalVariableReferenceInst(CreateLocalVariab
         variableRefContextElementTypes.push_back(GetType(ValueType::byteType));
         llvm::Value* localPtr = builder.CreateBitCast(locals[localIndex], GetType(ValueType::variableReference));
         llvm::StructType* variableRefContextType = llvm::StructType::get(context, variableRefContextElementTypes);
-        AllocaInst* variableRefContext = builder.CreateAlloca(variableRefContextType);
+        AllocaInst* variableRefContext = new llvm::AllocaInst(variableRefContextType);
+        InsertAllocaIntoEntryBlock(variableRefContext);
         ArgVector vrcLocalIndeces;
         vrcLocalIndeces.push_back(builder.getInt32(0));
         vrcLocalIndeces.push_back(builder.getInt32(0));
@@ -4260,7 +4303,8 @@ void NativeCompilerImpl::VisitCreateMemberVariableReferenceInst(CreateMemberVari
     variableRefContextElementTypes.push_back(GetType(ValueType::intType));
     variableRefContextElementTypes.push_back(GetType(ValueType::byteType));
     llvm::StructType* variableRefContextType = llvm::StructType::get(context, variableRefContextElementTypes);
-    AllocaInst* variableRefContext = builder.CreateAlloca(variableRefContextType);
+    AllocaInst* variableRefContext = new llvm::AllocaInst(variableRefContextType);
+    InsertAllocaIntoEntryBlock(variableRefContext);
     ArgVector vrcObjectIndeces;
     vrcObjectIndeces.push_back(builder.getInt32(0));
     vrcObjectIndeces.push_back(builder.getInt32(1));
@@ -4281,10 +4325,11 @@ void NativeCompilerImpl::VisitCreateMemberVariableReferenceInst(CreateMemberVari
 
 void NativeCompilerImpl::VisitLoadVariableReferenceInst(LoadVariableReferenceInst& instruction)
 {
-    llvm::AllocaInst* variable = builder.CreateAlloca(GetType(instruction.GetType()));
+    AllocaInst* variable = new llvm::AllocaInst(GetType(instruction.GetType()));
+    InsertAllocaIntoEntryBlock(variable);
     std::vector<llvm::Type*> variableRefContextElementTypes;
     variableRefContextElementTypes.push_back(PointerType::get(GetType(ValueType::byteType), 0));
-    variableRefContextElementTypes.push_back(GetType(ValueType::ulongType));
+    variableRefContextElementTypes.push_back(GetType(ValueType::objectReference));
     variableRefContextElementTypes.push_back(GetType(ValueType::intType));
     variableRefContextElementTypes.push_back(GetType(ValueType::byteType));
     llvm::StructType* variableRefContextType = llvm::StructType::get(context, variableRefContextElementTypes);
@@ -4403,7 +4448,7 @@ void NativeCompilerImpl::VisitLoadVariableReferenceInst(LoadVariableReferenceIns
         }
         case ValueType::objectReference:
         {
-            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldOb", GetType(ValueType::ulongType), GetType(ValueType::objectReference), GetType(ValueType::intType),
+            callee = cast<llvm::Function>(module->getOrInsertFunction("RtLoadFieldOb", GetType(ValueType::objectReference), GetType(ValueType::objectReference), GetType(ValueType::intType),
                 nullptr));
             break;
         }
@@ -4426,7 +4471,7 @@ void NativeCompilerImpl::VisitStoreVariableReferenceInst(StoreVariableReferenceI
     llvm::Value* value = valueStack.Pop();
     std::vector<llvm::Type*> variableRefContextElementTypes;
     variableRefContextElementTypes.push_back(PointerType::get(GetType(ValueType::byteType), 0));
-    variableRefContextElementTypes.push_back(GetType(ValueType::ulongType));
+    variableRefContextElementTypes.push_back(GetType(ValueType::objectReference));
     variableRefContextElementTypes.push_back(GetType(ValueType::intType));
     variableRefContextElementTypes.push_back(GetType(ValueType::byteType));
     llvm::StructType* variableRefContextType = llvm::StructType::get(context, variableRefContextElementTypes);
@@ -4620,7 +4665,11 @@ llvm::Type* NativeCompilerImpl::GetType(ValueType type)
         {
             return llvm::Type::getInt32Ty(context);
         }
-        case ValueType::longType: case ValueType::ulongType: case ValueType::objectReference:
+        case ValueType::objectReference:
+        {
+            return llvm::Type::getInt8PtrTy(context);
+        }
+        case ValueType::longType: case ValueType::ulongType: 
         {
             return llvm::Type::getInt64Ty(context);
         }
@@ -4746,7 +4795,7 @@ void NativeCompilerImpl::PushDefaultValue(ValueType type)
         }
         case ValueType::objectReference:
         {
-            valueStack.Push(builder.getInt64(0));
+            valueStack.Push(llvm::Constant::getNullValue(PointerType::get(GetType(ValueType::byteType), 0)));
             break;
         }
         case ValueType::functionPtr:
@@ -4804,7 +4853,11 @@ LlvmConv NativeCompilerImpl::GetConversionToULongFrom(ValueType type) const
         {
             return LlvmConv::zext;
         }
-        case ValueType::ulongType: case ValueType::objectReference:
+        case ValueType::objectReference:
+        {
+            return LlvmConv::ptr2int;
+        }
+        case ValueType::ulongType:
         {
             return LlvmConv::none;
         }
@@ -4896,7 +4949,11 @@ LlvmConv NativeCompilerImpl::GetConversionFromULong(ValueType type) const
         {
             return LlvmConv::trunc;
         }
-        case ValueType::ulongType: case ValueType::objectReference:
+        case ValueType::objectReference:
+        {
+            return LlvmConv::int2ptr;
+        }
+        case ValueType::ulongType: 
         {
             return LlvmConv::none;
         }

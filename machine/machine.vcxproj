@@ -75,7 +75,11 @@
     <ClInclude Include="Thread.hpp" />
     <ClInclude Include="Type.hpp" />
     <ClInclude Include="VariableReference.hpp" />
+    <ClInclude Include="Win64RegsIntf.hpp" />
     <ClInclude Include="Writer.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <MASM Include="Win64Regs.asm" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F7DE9EBE-8650-4FD5-936E-E89932AEE5BB}</ProjectGuid>

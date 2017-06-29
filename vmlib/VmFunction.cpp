@@ -14,6 +14,7 @@
 #include <cminor/machine/Runtime.hpp>
 #include <cminor/util/Random.hpp>
 #include <cminor/util/Unicode.hpp>
+#include <cminor/util/Defines.hpp>
 #include <boost/filesystem.hpp>
 #include <cctype>
 #include <chrono>
@@ -1874,7 +1875,9 @@ struct WaitingSetter
         prevState = thread.GetState();
         if (RunningNativeCode())
         {
+#ifdef SHADOW_STACK_GC
             thread.SetFunctionStack(RtGetFunctionStack());
+#endif
         }
         thread.SetState(ThreadState::waiting);
     }

@@ -20,4 +20,7 @@
     #endif
 #endif 
 
+#define SHADOW_STACK_GC 1
+#define STACK_WALK_GC 1
+
 #endif // CMINOR_UTIL_DEFINES_INCLUDED

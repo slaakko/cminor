@@ -10,6 +10,7 @@
 #include <cminor/machine/Runtime.hpp>
 #include <cminor/machine/Log.hpp>
 #include <cminor/util/Unicode.hpp>
+#include <cminor/util/Defines.hpp>
 #include <chrono>
 
 namespace cminor { namespace machine {
@@ -65,7 +66,7 @@ ThreadExitSetter::~ThreadExitSetter()
 Thread::Thread(int32_t id_, Machine& machine_, Function& fun_) :
     stack(*this), id(id_), machine(machine_), fun(fun_), handlingException(false), currentExceptionBlock(nullptr), state(ThreadState::paused), 
     exceptionObjectType(nullptr), nextVariableReferenceId(1), threadHandle(0), functionStack(nullptr), nativeId(-1), owner('0' + id), mtx('0' + id), 
-    allocationContext(nullptr)
+    allocationContext(nullptr), stackPtr(nullptr), framePtr(nullptr)
 {
     if (GetNumAllocationContextPages() > 0)
     {
@@ -128,7 +129,9 @@ void Thread::WaitUntilGarbageCollected()
 #ifdef GC_LOGGING
         LogMessage(">" + std::to_string(id) + " (setting native function stack)");
 #endif
+#ifdef SHADOW_STACK_GC
         SetFunctionStack(RtGetFunctionStack());
+#endif
 #ifdef GC_LOGGING
         LogMessage(">" + std::to_string(id) + " (native function stack set)");
 #endif

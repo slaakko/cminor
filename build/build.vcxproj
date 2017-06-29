@@ -20,11 +20,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Build.hpp" />
+    <ClInclude Include="NativeGC.hpp" />
     <ClInclude Include="NativeCompiler.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Build.cpp" />
     <ClCompile Include="NativeCompiler.cpp" />
+    <ClCompile Include="NativeGC.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{832C864C-F397-4F8E-8C3C-6AF6DC71227E}</ProjectGuid>

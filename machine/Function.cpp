@@ -278,13 +278,13 @@ std::string FunctionFlagsStr(FunctionFlags flags)
 }
 
 Function::Function() : groupName(), callName(), fullName(), sourceFilePath(), id(-1), numLocals(0), numParameters(0), constantPool(nullptr), isMain(false), emitter(nullptr), returnsValue(false),
-    returnType(ValueType::none), flags(FunctionFlags::none), address(nullptr), assembly(nullptr), functionSymbol(nullptr), alreadyGenerated(false)
+    returnType(ValueType::none), flags(FunctionFlags::none), frameSize(-1), lineNumberVarOffset(-1), address(nullptr), assembly(nullptr), functionSymbol(nullptr), alreadyGenerated(false)
 {
 }
 
 Function::Function(Constant groupName_, Constant callName_, Constant friendlyName_, uint32_t id_, ConstantPool* constantPool_) :
     groupName(groupName_), callName(callName_), fullName(friendlyName_), sourceFilePath(), id(id_), numLocals(0), numParameters(0), constantPool(constantPool_), isMain(false), emitter(nullptr),
-    returnsValue(false), returnType(ValueType::none), flags(FunctionFlags::none), address(nullptr), assembly(nullptr), functionSymbol(nullptr),
+    returnsValue(false), returnType(ValueType::none), flags(FunctionFlags::none), frameSize(-1), lineNumberVarOffset(-1), address(nullptr), assembly(nullptr), functionSymbol(nullptr),
     alreadyGenerated(false)
 {
 }
@@ -361,7 +361,14 @@ void Function::Write(Writer& writer)
         writer.PutEncodedUInt(p.first);
         writer.PutEncodedUInt(p.second);
     }
-    //writer.Put(stackMapRecordId);
+    writer.Put(frameSize);
+    uint32_t numGCRootStackOffsets = uint32_t(gcRootStackOffsets.size());
+    writer.PutEncodedUInt(numGCRootStackOffsets);
+    for (uint32_t i = 0; i < numGCRootStackOffsets; ++i)
+    {
+        writer.Put(gcRootStackOffsets[i]);
+    }
+    writer.Put(lineNumberVarOffset);
 }
 
 void Function::Read(Reader& reader)
@@ -425,7 +432,13 @@ void Function::Read(Reader& reader)
             SourceFileTable::MapSourceFileLine(sourceFilePath, sourceLine, this);
         }
     }
-    //stackMapRecordId = reader.GetULong();
+    frameSize = reader.GetULong();
+    uint32_t numGCRootStackOffsets = reader.GetEncodedUInt();
+    for (uint32_t i = 0; i < numGCRootStackOffsets; ++i)
+    {
+        gcRootStackOffsets.push_back(reader.GetInt());
+    }
+    lineNumberVarOffset = reader.GetInt();
 }
 
 void Function::SetNumLocals(uint32_t numLocals_)
@@ -509,6 +522,26 @@ void Function::Dump(CodeFormatter& formatter)
             exceptionBlock->Dump(formatter);
         }
     }
+    formatter.WriteLine("frame size: " + std::to_string(frameSize));
+    formatter.Write("gc root stack offsets: ");
+    int numGCRootStackOffsets = int(gcRootStackOffsets.size());
+    bool first = true;
+    for (int i = 0; i < numGCRootStackOffsets; ++i)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            formatter.Write(" ");
+        }
+        int32_t gcRootStackOffset = gcRootStackOffsets[i];
+        formatter.Write(std::to_string(gcRootStackOffset));
+    }
+
+    formatter.WriteLine();
+    formatter.WriteLine("line number variable offset: " + std::to_string(lineNumberVarOffset));
     formatter.WriteLine("code:");
     formatter.WriteLine("{");
     formatter.IncIndent();

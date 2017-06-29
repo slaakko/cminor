@@ -10,10 +10,14 @@
 #include <cminor/machine/Class.hpp>
 #include <cminor/util/Util.hpp>
 #include <cminor/util/Unicode.hpp>
-#include <iostream>
+#include <cminor/util/Defines.hpp>
+#ifdef STACK_WALK_GC
 #ifdef _WIN32
+#include <cminor/machine/Win64RegsIntf.hpp>
 #include <intrin.h>
 #endif
+#endif
+#include <iostream>
 
 namespace cminor { namespace machine {
 
@@ -26,10 +30,14 @@ MACHINE_API void SetTrace()
     trace = true;
 }
 
+#ifdef SHADOW_STACK_GC
+
 #ifdef _WIN32
     __declspec(thread) FunctionStackEntry* functionStack = nullptr;
 #else
     __thread FunctionStackEntry* functionStack = nullptr;
+#endif
+
 #endif
 
 #ifdef _WIN32
@@ -38,12 +46,71 @@ MACHINE_API void SetTrace()
     __thread uint64_t currentException = 0;
 #endif
 
+#ifdef SHADOW_STACK_GC
+
 MACHINE_API FunctionStackEntry* RtGetFunctionStack()
 {
     return functionStack;
 }
 
-std::u32string GetStackTrace() 
+#endif
+
+#ifdef STACK_WALK_GC
+
+std::u32string GetStackTrace()
+{
+    Thread& thread = GetCurrentThread();
+    std::u32string stackTrace;
+    bool first = true;
+    void* stackPtr = thread.StackPtr();
+    void* framePtr = thread.FramePtr();
+    void* instructionPtr = *reinterpret_cast<void**>(stackPtr);
+    const Function* threadMain = thread.ThreadMain();
+    Function* fun = FunctionTable::GetNativeFunction(instructionPtr);
+    while (fun)
+    {
+        if (first)
+        {
+            first = false;
+        }
+        else
+        {
+            stackTrace.append(1, U'\n');
+        }
+        std::u32string funStr = U"at ";
+        funStr.append(fun->FullName().Value().AsStringLiteral());
+        if (fun->HasSourceFilePath())
+        {
+            int lineNumber = -1;
+            int32_t lineNumberVarOffset = fun->LineNumberVarOffset();
+            if (lineNumberVarOffset != -1)
+            {
+                uint32_t* lineNumberVarPtr = reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(framePtr) + lineNumberVarOffset);
+                lineNumber = *lineNumberVarPtr;
+            }
+            if (lineNumber != -1)
+            {
+                funStr.append(U" [").append(fun->SourceFilePath().Value().AsStringLiteral());
+                funStr.append(U":").append(ToUtf32(std::to_string(lineNumber))).append(U"]");
+            }
+        }
+        stackTrace.append(funStr);
+        if (fun == threadMain)
+        {
+            break;
+        }
+        stackPtr = reinterpret_cast<uint8_t*>(stackPtr) + fun->FrameSize();
+        framePtr = *reinterpret_cast<void**>(stackPtr);
+        stackPtr = reinterpret_cast<uint8_t*>(stackPtr) + 8;
+        instructionPtr = *reinterpret_cast<void**>(stackPtr);
+        fun = FunctionTable::GetNativeFunction(instructionPtr);
+    }
+    return stackTrace;
+}
+
+#elif defined(SHADOW_STACK_GC)
+
+std::u32string GetStackTrace()
 {
     std::u32string stackTrace;
     bool first = true;
@@ -74,6 +141,8 @@ std::u32string GetStackTrace()
     }
     return stackTrace;
 }
+
+#endif
 
 void RtThrowCminorException(const std::string& message, const std::u32string& exceptionTypeName, int errorCode)
 {
@@ -160,7 +229,19 @@ extern "C" MACHINE_API void RtThrowException(uint64_t exceptionObjectReference)
         RtThrowSystemException(SystemException("tried to throw null reference"));
         return;
     }
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
     Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     currentException = exceptionObjectReference;
     ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
     std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
@@ -212,6 +293,8 @@ extern "C" MACHINE_API void RtDisposeException()
     header->Unreference();
 }
 
+#ifdef SHADOW_STACK_GC
+
 extern "C" MACHINE_API void RtEnterFunction(void* functionStackEntry)
 {
     FunctionStackEntry* entry = static_cast<FunctionStackEntry*>(functionStackEntry);
@@ -231,8 +314,23 @@ extern "C" MACHINE_API void RtUnwindFunctionStack(void* functionStackEntry)
     functionStack = entry;
 }
 
+#endif
+
 extern "C" MACHINE_API int8_t RtLoadFieldSb(uint64_t objectReference, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -248,6 +346,19 @@ extern "C" MACHINE_API int8_t RtLoadFieldSb(uint64_t objectReference, int32_t fi
 
 extern "C" MACHINE_API uint8_t RtLoadFieldBy(uint64_t objectReference, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -263,6 +374,19 @@ extern "C" MACHINE_API uint8_t RtLoadFieldBy(uint64_t objectReference, int32_t f
 
 extern "C" MACHINE_API int16_t RtLoadFieldSh(uint64_t objectReference, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -278,6 +402,19 @@ extern "C" MACHINE_API int16_t RtLoadFieldSh(uint64_t objectReference, int32_t f
 
 extern "C" MACHINE_API uint16_t RtLoadFieldUs(uint64_t objectReference, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -293,6 +430,19 @@ extern "C" MACHINE_API uint16_t RtLoadFieldUs(uint64_t objectReference, int32_t 
 
 extern "C" MACHINE_API int32_t RtLoadFieldIn(uint64_t objectReference, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -308,6 +458,19 @@ extern "C" MACHINE_API int32_t RtLoadFieldIn(uint64_t objectReference, int32_t f
 
 extern "C" MACHINE_API uint32_t RtLoadFieldUi(uint64_t objectReference, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -323,6 +486,19 @@ extern "C" MACHINE_API uint32_t RtLoadFieldUi(uint64_t objectReference, int32_t 
 
 extern "C" MACHINE_API int64_t RtLoadFieldLo(uint64_t objectReference, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -338,6 +514,19 @@ extern "C" MACHINE_API int64_t RtLoadFieldLo(uint64_t objectReference, int32_t f
 
 extern "C" MACHINE_API uint64_t RtLoadFieldUl(uint64_t objectReference, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -353,6 +542,19 @@ extern "C" MACHINE_API uint64_t RtLoadFieldUl(uint64_t objectReference, int32_t 
 
 extern "C" MACHINE_API float RtLoadFieldFl(uint64_t objectReference, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -368,6 +570,19 @@ extern "C" MACHINE_API float RtLoadFieldFl(uint64_t objectReference, int32_t fie
 
 extern "C" MACHINE_API double RtLoadFieldDo(uint64_t objectReference, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -383,6 +598,19 @@ extern "C" MACHINE_API double RtLoadFieldDo(uint64_t objectReference, int32_t fi
 
 extern "C" MACHINE_API uint32_t RtLoadFieldCh(uint64_t objectReference, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -398,6 +626,19 @@ extern "C" MACHINE_API uint32_t RtLoadFieldCh(uint64_t objectReference, int32_t 
 
 extern "C" MACHINE_API bool RtLoadFieldBo(uint64_t objectReference, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -413,6 +654,19 @@ extern "C" MACHINE_API bool RtLoadFieldBo(uint64_t objectReference, int32_t fiel
 
 extern "C" MACHINE_API uint64_t RtLoadFieldOb(uint64_t objectReference, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -428,6 +682,19 @@ extern "C" MACHINE_API uint64_t RtLoadFieldOb(uint64_t objectReference, int32_t 
 
 extern "C" MACHINE_API void RtStoreFieldSb(uint64_t objectReference, int8_t fieldValue, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -441,6 +708,19 @@ extern "C" MACHINE_API void RtStoreFieldSb(uint64_t objectReference, int8_t fiel
 
 extern "C" MACHINE_API void RtStoreFieldBy(uint64_t objectReference, uint8_t fieldValue, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -454,6 +734,19 @@ extern "C" MACHINE_API void RtStoreFieldBy(uint64_t objectReference, uint8_t fie
 
 extern "C" MACHINE_API void RtStoreFieldSh(uint64_t objectReference, int16_t fieldValue, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -467,6 +760,19 @@ extern "C" MACHINE_API void RtStoreFieldSh(uint64_t objectReference, int16_t fie
 
 extern "C" MACHINE_API void RtStoreFieldUs(uint64_t objectReference, uint16_t fieldValue, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -480,6 +786,19 @@ extern "C" MACHINE_API void RtStoreFieldUs(uint64_t objectReference, uint16_t fi
 
 extern "C" MACHINE_API void RtStoreFieldIn(uint64_t objectReference, int32_t fieldValue, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -493,6 +812,19 @@ extern "C" MACHINE_API void RtStoreFieldIn(uint64_t objectReference, int32_t fie
 
 extern "C" MACHINE_API void RtStoreFieldUi(uint64_t objectReference, uint32_t fieldValue, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -506,6 +838,19 @@ extern "C" MACHINE_API void RtStoreFieldUi(uint64_t objectReference, uint32_t fi
 
 extern "C" MACHINE_API void RtStoreFieldLo(uint64_t objectReference, int64_t fieldValue, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -519,6 +864,19 @@ extern "C" MACHINE_API void RtStoreFieldLo(uint64_t objectReference, int64_t fie
 
 extern "C" MACHINE_API void RtStoreFieldUl(uint64_t objectReference, uint64_t fieldValue, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -532,6 +890,19 @@ extern "C" MACHINE_API void RtStoreFieldUl(uint64_t objectReference, uint64_t fi
 
 extern "C" MACHINE_API void RtStoreFieldFl(uint64_t objectReference, float fieldValue, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -545,6 +916,19 @@ extern "C" MACHINE_API void RtStoreFieldFl(uint64_t objectReference, float field
 
 extern "C" MACHINE_API void RtStoreFieldDo(uint64_t objectReference, double fieldValue, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -558,6 +942,19 @@ extern "C" MACHINE_API void RtStoreFieldDo(uint64_t objectReference, double fiel
 
 extern "C" MACHINE_API void RtStoreFieldCh(uint64_t objectReference, uint32_t fieldValue, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -571,6 +968,19 @@ extern "C" MACHINE_API void RtStoreFieldCh(uint64_t objectReference, uint32_t fi
 
 extern "C" MACHINE_API void RtStoreFieldBo(uint64_t objectReference, bool fieldValue, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -584,6 +994,19 @@ extern "C" MACHINE_API void RtStoreFieldBo(uint64_t objectReference, bool fieldV
 
 extern "C" MACHINE_API void RtStoreFieldOb(uint64_t objectReference, uint64_t fieldValue, int32_t fieldIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -597,6 +1020,19 @@ extern "C" MACHINE_API void RtStoreFieldOb(uint64_t objectReference, uint64_t fi
 
 extern "C" MACHINE_API int8_t RtLoadElemSb(uint64_t arrayReference, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -616,6 +1052,19 @@ extern "C" MACHINE_API int8_t RtLoadElemSb(uint64_t arrayReference, int32_t elem
 
 extern "C" MACHINE_API uint8_t RtLoadElemBy(uint64_t arrayReference, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -635,6 +1084,19 @@ extern "C" MACHINE_API uint8_t RtLoadElemBy(uint64_t arrayReference, int32_t ele
 
 extern "C" MACHINE_API int16_t RtLoadElemSh(uint64_t arrayReference, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -654,6 +1116,19 @@ extern "C" MACHINE_API int16_t RtLoadElemSh(uint64_t arrayReference, int32_t ele
 
 extern "C" MACHINE_API uint16_t RtLoadElemUs(uint64_t arrayReference, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -673,6 +1148,19 @@ extern "C" MACHINE_API uint16_t RtLoadElemUs(uint64_t arrayReference, int32_t el
 
 extern "C" MACHINE_API int32_t RtLoadElemIn(uint64_t arrayReference, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -692,6 +1180,19 @@ extern "C" MACHINE_API int32_t RtLoadElemIn(uint64_t arrayReference, int32_t ele
 
 extern "C" MACHINE_API uint32_t RtLoadElemUi(uint64_t arrayReference, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -711,6 +1212,19 @@ extern "C" MACHINE_API uint32_t RtLoadElemUi(uint64_t arrayReference, int32_t el
 
 extern "C" MACHINE_API int64_t RtLoadElemLo(uint64_t arrayReference, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -730,6 +1244,19 @@ extern "C" MACHINE_API int64_t RtLoadElemLo(uint64_t arrayReference, int32_t ele
 
 extern "C" MACHINE_API uint64_t RtLoadElemUl(uint64_t arrayReference, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -749,6 +1276,19 @@ extern "C" MACHINE_API uint64_t RtLoadElemUl(uint64_t arrayReference, int32_t el
 
 extern "C" MACHINE_API float RtLoadElemFl(uint64_t arrayReference, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -768,6 +1308,19 @@ extern "C" MACHINE_API float RtLoadElemFl(uint64_t arrayReference, int32_t eleme
 
 extern "C" MACHINE_API double RtLoadElemDo(uint64_t arrayReference, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -787,6 +1340,19 @@ extern "C" MACHINE_API double RtLoadElemDo(uint64_t arrayReference, int32_t elem
 
 extern "C" MACHINE_API uint32_t RtLoadElemCh(uint64_t arrayReference, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -806,6 +1372,19 @@ extern "C" MACHINE_API uint32_t RtLoadElemCh(uint64_t arrayReference, int32_t el
 
 extern "C" MACHINE_API bool RtLoadElemBo(uint64_t arrayReference, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -825,6 +1404,19 @@ extern "C" MACHINE_API bool RtLoadElemBo(uint64_t arrayReference, int32_t elemen
 
 extern "C" MACHINE_API uint64_t RtLoadElemOb(uint64_t arrayReference, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -844,6 +1436,19 @@ extern "C" MACHINE_API uint64_t RtLoadElemOb(uint64_t arrayReference, int32_t el
 
 extern "C" MACHINE_API void RtStoreElemSb(uint64_t arrayReference, int8_t elementValue, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -861,6 +1466,19 @@ extern "C" MACHINE_API void RtStoreElemSb(uint64_t arrayReference, int8_t elemen
 
 extern "C" MACHINE_API void RtStoreElemBy(uint64_t arrayReference, uint8_t elementValue, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -878,6 +1496,19 @@ extern "C" MACHINE_API void RtStoreElemBy(uint64_t arrayReference, uint8_t eleme
 
 extern "C" MACHINE_API void RtStoreElemSh(uint64_t arrayReference, int16_t elementValue, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -895,6 +1526,19 @@ extern "C" MACHINE_API void RtStoreElemSh(uint64_t arrayReference, int16_t eleme
 
 extern "C" MACHINE_API void RtStoreElemUs(uint64_t arrayReference, uint16_t elementValue, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -912,6 +1556,19 @@ extern "C" MACHINE_API void RtStoreElemUs(uint64_t arrayReference, uint16_t elem
 
 extern "C" MACHINE_API void RtStoreElemIn(uint64_t arrayReference, int32_t elementValue, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -929,6 +1586,19 @@ extern "C" MACHINE_API void RtStoreElemIn(uint64_t arrayReference, int32_t eleme
 
 extern "C" MACHINE_API void RtStoreElemUi(uint64_t arrayReference, uint32_t elementValue, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -946,6 +1616,19 @@ extern "C" MACHINE_API void RtStoreElemUi(uint64_t arrayReference, uint32_t elem
 
 extern "C" MACHINE_API void RtStoreElemLo(uint64_t arrayReference, int64_t elementValue, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -963,6 +1646,19 @@ extern "C" MACHINE_API void RtStoreElemLo(uint64_t arrayReference, int64_t eleme
 
 extern "C" MACHINE_API void RtStoreElemUl(uint64_t arrayReference, uint64_t elementValue, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -980,6 +1676,19 @@ extern "C" MACHINE_API void RtStoreElemUl(uint64_t arrayReference, uint64_t elem
 
 extern "C" MACHINE_API void RtStoreElemFl(uint64_t arrayReference, float elementValue, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -997,6 +1706,19 @@ extern "C" MACHINE_API void RtStoreElemFl(uint64_t arrayReference, float element
 
 extern "C" MACHINE_API void RtStoreElemDo(uint64_t arrayReference, double elementValue, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -1014,6 +1736,19 @@ extern "C" MACHINE_API void RtStoreElemDo(uint64_t arrayReference, double elemen
 
 extern "C" MACHINE_API void RtStoreElemCh(uint64_t arrayReference, uint32_t elementValue, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -1031,6 +1766,19 @@ extern "C" MACHINE_API void RtStoreElemCh(uint64_t arrayReference, uint32_t elem
 
 extern "C" MACHINE_API void RtStoreElemBo(uint64_t arrayReference, bool elementValue, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -1048,6 +1796,19 @@ extern "C" MACHINE_API void RtStoreElemBo(uint64_t arrayReference, bool elementV
 
 extern "C" MACHINE_API void RtStoreElemOb(uint64_t arrayReference, uint64_t elementValue, int32_t elementIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(arrayReference);
@@ -1065,6 +1826,19 @@ extern "C" MACHINE_API void RtStoreElemOb(uint64_t arrayReference, uint64_t elem
 
 extern "C" MACHINE_API void* RtResolveVirtualFunctionCallAddress(uint64_t objectReference, uint32_t vmtIndex)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference receiver(objectReference);
@@ -1107,6 +1881,19 @@ extern "C" MACHINE_API void* RtResolveVirtualFunctionCallAddress(uint64_t object
 
 extern "C" MACHINE_API void* RtResolveInterfaceCallAddress(uint64_t objectReference, uint32_t imtIndex, uint64_t* receiver)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference interfaceObject(objectReference);
@@ -1203,7 +1990,19 @@ extern "C" MACHINE_API void RtVmCall(void* function, void* constantPool, uint32_
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         Function* fun = static_cast<Function*>(function);
         int numLocals = vmCallContext->numLocals;
         uint64_t frameSize = Align(sizeof(Frame), 8) + numLocals * Align(sizeof(LocalVariable), 8);
@@ -1261,6 +2060,19 @@ extern "C" MACHINE_API void RtVmCall(void* function, void* constantPool, uint32_
 
 extern "C" MACHINE_API void* RtResolveDelegateCallAddress(void* function)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         Function* fun = static_cast<Function*>(function);
@@ -1293,6 +2105,19 @@ extern "C" MACHINE_API void* RtResolveDelegateCallAddress(void* function)
 
 extern "C" MACHINE_API void* RtResolveClassDelegateCallAddress(uint64_t classDlg, uint64_t* classObject)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference classDelegateRef(classDlg);
@@ -1335,6 +2160,19 @@ extern "C" MACHINE_API void* RtResolveClassDelegateCallAddress(uint64_t classDlg
 
 extern "C" MACHINE_API void RtSetClassDataPtr(uint64_t objectReference, void* classDataPtr)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -1358,7 +2196,19 @@ extern "C" MACHINE_API uint64_t RtCreateObject(void* classDataPtr)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ClassData* cd = static_cast<ClassData*>(classDataPtr);
         ObjectReference objectReference = GetManagedMemoryPool().CreateObject(thread, cd->Type());
         return objectReference.Value();
@@ -1374,7 +2224,19 @@ extern "C" MACHINE_API uint64_t RtCopyObject(uint64_t objectReference)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ObjectReference reference(objectReference);
         ObjectReference copy = GetManagedMemoryPool().CopyObject(thread, reference);
         return copy.Value();
@@ -1390,7 +2252,19 @@ extern "C" MACHINE_API uint64_t RtStrLitToString(const char32_t* strLitValue)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         uint32_t len = static_cast<uint32_t>(StringLen(strLitValue));
         ClassData* classData = ClassDataTable::GetSystemStringClassData();
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
@@ -1411,6 +2285,19 @@ extern "C" MACHINE_API uint64_t RtStrLitToString(const char32_t* strLitValue)
 
 extern "C" MACHINE_API uint32_t RtLoadStringChar(int32_t index, uint64_t str)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference strReference(str);
@@ -1430,6 +2317,19 @@ extern "C" MACHINE_API uint32_t RtLoadStringChar(int32_t index, uint64_t str)
 
 extern "C" MACHINE_API uint64_t RtDownCast(uint64_t objectReference, void* classDataPtr)
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
+#ifdef STACK_WALK_GC
+    Thread& thread = GetCurrentThread();
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     try
     {
         ObjectReference reference(objectReference);
@@ -2137,7 +3037,19 @@ extern "C" MACHINE_API uint64_t RtBoxSb(int8_t value)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ObjectType* objectType = GetBoxedType(ValueType::sbyteType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
@@ -2163,7 +3075,19 @@ extern "C" MACHINE_API uint64_t RtBoxBy(uint8_t value)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ObjectType* objectType = GetBoxedType(ValueType::byteType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
@@ -2189,7 +3113,19 @@ extern "C" MACHINE_API uint64_t RtBoxSh(int16_t value)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ObjectType* objectType = GetBoxedType(ValueType::shortType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
@@ -2215,7 +3151,19 @@ extern "C" MACHINE_API uint64_t RtBoxUs(uint16_t value)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ObjectType* objectType = GetBoxedType(ValueType::ushortType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
@@ -2241,7 +3189,19 @@ extern "C" MACHINE_API uint64_t RtBoxIn(int32_t value)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ObjectType* objectType = GetBoxedType(ValueType::intType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
@@ -2267,7 +3227,19 @@ extern "C" MACHINE_API uint64_t RtBoxUi(uint32_t value)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ObjectType* objectType = GetBoxedType(ValueType::uintType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
@@ -2293,7 +3265,19 @@ extern "C" MACHINE_API uint64_t RtBoxLo(int64_t value)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ObjectType* objectType = GetBoxedType(ValueType::longType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
@@ -2319,7 +3303,19 @@ extern "C" MACHINE_API uint64_t RtBoxUl(uint64_t value)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ObjectType* objectType = GetBoxedType(ValueType::ulongType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
@@ -2345,7 +3341,19 @@ extern "C" MACHINE_API uint64_t RtBoxFl(float value)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ObjectType* objectType = GetBoxedType(ValueType::floatType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
@@ -2371,7 +3379,19 @@ extern "C" MACHINE_API uint64_t RtBoxDo(double value)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ObjectType* objectType = GetBoxedType(ValueType::doubleType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
@@ -2397,7 +3417,19 @@ extern "C" MACHINE_API uint64_t RtBoxCh(uint32_t value)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ObjectType* objectType = GetBoxedType(ValueType::charType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
@@ -2423,7 +3455,19 @@ extern "C" MACHINE_API uint64_t RtBoxBo(bool value)
 {
     try
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         ObjectType* objectType = GetBoxedType(ValueType::boolType);
         ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
         std::unique_lock<std::recursive_mutex> lock(memoryPool.AllocationsMutex());
@@ -2841,7 +3885,19 @@ extern "C" MACHINE_API void RtMemFun2ClassDelegate(uint64_t classObjectRererence
 
 extern "C" MACHINE_API void RtRequestGc()
 {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+    void* stackPtr = _AddressOfReturnAddress();
+    void* framePtr = getrbp();
+#else
+    // todo Linux
+#endif
+#endif
     Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+    thread.SetStackPtr(stackPtr);
+    thread.SetFramePtr(framePtr);
+#endif
     thread.RequestGc(false);
     thread.WaitUntilGarbageCollected();
 }
@@ -2850,7 +3906,19 @@ extern "C" MACHINE_API void RtPollGc()
 {
     if (wantToCollectGarbage)
     {
+#ifdef STACK_WALK_GC
+#ifdef _WIN32
+        void* stackPtr = _AddressOfReturnAddress();
+        void* framePtr = getrbp();
+#else
+        // todo Linux
+#endif
+#endif
         Thread& thread = GetCurrentThread();
+#ifdef STACK_WALK_GC
+        thread.SetStackPtr(stackPtr);
+        thread.SetFramePtr(framePtr);
+#endif
         thread.WaitUntilGarbageCollected();
     }
 }

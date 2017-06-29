@@ -8,7 +8,6 @@
 #include <cminor/machine/MachineApi.hpp>
 #include <cminor/machine/Constant.hpp>
 #include <cminor/machine/Instruction.hpp>
-//#include <cminor/machine/StackMap.hpp>
 #include <ostream>
 #include <map>
 
@@ -218,6 +217,12 @@ public:
     void SetCanThrow() { SetFlag(FunctionFlags::canThrow); }
     bool HasInlineAttribute() const { return GetFlag(FunctionFlags::inlineAttr); }
     void SetInlineAttribute() { SetFlag(FunctionFlags::inlineAttr); }
+    uint64_t FrameSize() const { return frameSize; }
+    void SetFrameSize(uint64_t frameSize_) { frameSize = frameSize_; }
+    void AddGCRootStackOffset(int32_t gcRootStackOffset) { gcRootStackOffsets.push_back(gcRootStackOffset); }
+    const std::vector<int32_t>& GCRootStackOffsets() const { return gcRootStackOffsets; }
+    uint32_t LineNumberVarOffset() const { return lineNumberVarOffset; }
+    void SetLineNumberVarOffset(uint32_t lineNumberVarOffset_) { lineNumberVarOffset = lineNumberVarOffset_; }
     void* Address() const { return address; }
     void SetAddress(void* address_) { address = address_; }
     void* GetAssembly() const { return assembly; }
@@ -226,13 +231,6 @@ public:
     void SetFunctionSymbol(void* functionSymbol_) { functionSymbol = functionSymbol_; }
     void SetAlreadyGenerated() { alreadyGenerated = true; }
     bool AlreadyGenerated() const { return alreadyGenerated; }
-/*
-    void SetStackMapRecordId(uint64_t stackMapRecordId_) { stackMapRecordId = stackMapRecordId_; }
-    uint64_t GetStackMapRecordId() const { return stackMapRecordId; }
-    void SetStackMapRecord(StackMapRecord* stackMapRecord_) { stackMapRecord = stackMapRecord_; }
-    const StackMapRecord* GetStackMapRecord() const { return stackMapRecord; }
-    void FetchRoots(void* framePtr, std::vector<uint64_t>& stackRoots);
-*/
 private:
     Constant groupName;
     Constant callName;
@@ -257,8 +255,9 @@ private:
     std::unordered_set<uint32_t> breakPoints;
     Emitter* emitter;
     FunctionFlags flags;
-    //uint64_t stackMapRecordId;
-    //StackMapRecord* stackMapRecord;
+    int64_t frameSize;
+    std::vector<int32_t> gcRootStackOffsets;
+    int32_t lineNumberVarOffset;
     void* address;
     void* assembly;
     void* functionSymbol;

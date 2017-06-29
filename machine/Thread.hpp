@@ -121,6 +121,11 @@ public:
     void PushAllocationHandle(AllocationHandle handle) { allocationHandleStack.push(handle); }
     AllocationHandle PopAllocationHandle() { AllocationHandle handle = allocationHandleStack.top();  allocationHandleStack.pop(); return handle; }
     bool HasAllocationHandles() const { return !allocationHandleStack.empty(); }
+    void* StackPtr() const { return stackPtr; }
+    void SetStackPtr(void* stackPtr_) { stackPtr = stackPtr_; }
+    void* FramePtr() const { return framePtr; }
+    void SetFramePtr(void* framePtr_) { framePtr = framePtr_; }
+    const Function* ThreadMain() const { return &fun; }
 private:
     Stack stack;
     int32_t id;
@@ -149,6 +154,8 @@ private:
     Mutex mtx;
     std::unique_ptr<AllocationContext> allocationContext;
     std::stack<AllocationHandle> allocationHandleStack;
+    void* stackPtr;
+    void* framePtr;
     void RunToEnd();
     void FindExceptionBlock(Frame* frame);
     bool DispatchToHandlerOrFinally(Frame* frame);

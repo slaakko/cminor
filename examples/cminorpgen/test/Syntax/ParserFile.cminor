@@ -352,16 +352,16 @@ namespace Syntax
                 grammar0 = new System.Text.Parsing.stdlib(parsingDomain);
             }
             ReferencedGrammars.Add(grammar0);
-            Grammar grammar1 = parsingDomain.GetGrammar("Syntax.GrammarGrammar");
+            Grammar grammar1 = parsingDomain.GetGrammar("Code.NamespaceGrammar");
             if (grammar1 == null)
             {
-                grammar1 = new Syntax.GrammarGrammar(parsingDomain);
+                grammar1 = new Code.NamespaceGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar1);
-            Grammar grammar2 = parsingDomain.GetGrammar("Code.NamespaceGrammar");
+            Grammar grammar2 = parsingDomain.GetGrammar("Syntax.GrammarGrammar");
             if (grammar2 == null)
             {
-                grammar2 = new Code.NamespaceGrammar(parsingDomain);
+                grammar2 = new Syntax.GrammarGrammar(parsingDomain);
             }
             ReferencedGrammars.Add(grammar2);
         }

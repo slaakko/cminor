@@ -10,7 +10,10 @@
 #include <cminor/machine/Stats.hpp>
 #include <cminor/machine/Class.hpp>
 #include <cminor/machine/Function.hpp>
+#include <cminor/util/Defines.hpp>
 #include <iostream>
+
+//  #define DEBUG_GC 1
 
 namespace cminor { namespace machine {
 
@@ -269,6 +272,9 @@ inline void GarbageCollector::MarkLiveAllocations(ObjectReference objectReferenc
 
 void GarbageCollector::MarkLiveAllocations()
 {
+#ifdef DEBUG_GC
+    std::cerr << "begin GC" << std::endl;
+#endif
     std::unordered_set<AllocationHandle, AllocationHandleHash> checked;
     ManagedMemoryPool& memoryPool = GetManagedMemoryPool();
     for (const auto& p : ClassDataTable::ClassDataMap())
@@ -298,6 +304,13 @@ void GarbageCollector::MarkLiveAllocations()
     }
     for (const std::unique_ptr<Thread>& thread : machine.Threads())
     {
+        if (thread->GetState() == ThreadState::exited)
+        {
+            continue;
+        }
+#ifdef DEBUG_GC
+        std::cerr << "thread " << thread->Id() << std::endl;
+#endif
         ObjectReference exceptionReference = thread->Exception();
         MarkLiveAllocations(exceptionReference, checked);
         const OperandStack& operandStack = thread->OpStack();
@@ -325,6 +338,51 @@ void GarbageCollector::MarkLiveAllocations()
         }
         if (RunningNativeCode())
         {
+#ifdef STACK_WALK_GC
+            std::vector<uint64_t> roots;
+            void* stackPtr = thread->StackPtr();
+            void* instructionPtr = *reinterpret_cast<void**>(stackPtr);
+            void* framePtr = thread->FramePtr();
+            const Function* threadMain = thread->ThreadMain();
+            Function* fun = FunctionTable::GetNativeFunction(instructionPtr);
+            while (fun)
+            {
+#ifdef DEBUG_GC
+                std::cerr << fun->MangledName() << std::endl;
+#endif
+                for (int32_t gcRootStackOffset : fun->GCRootStackOffsets())
+                {
+                    uint64_t* rootPtr = reinterpret_cast<uint64_t*>(reinterpret_cast<uint8_t*>(framePtr) + gcRootStackOffset);
+                    uint64_t root = *rootPtr;
+                    if (root != 0)
+                    {
+                        roots.push_back(root);
+                    }
+                }
+                if (fun == threadMain)
+                {
+                    break;
+                }
+                if (fun->FrameSize() == -1)
+                {
+                    throw std::runtime_error("cannot walk: frame size -1 encountered");
+                }
+                else
+                {
+                    stackPtr = reinterpret_cast<uint8_t*>(stackPtr) + fun->FrameSize();
+                }
+                framePtr = *reinterpret_cast<void**>(stackPtr);
+                stackPtr = reinterpret_cast<uint8_t*>(stackPtr) + 8;
+                instructionPtr = *reinterpret_cast<void**>(stackPtr);
+                fun = FunctionTable::GetNativeFunction(instructionPtr);
+            }
+#ifdef DEBUG_GC
+            std::cerr << roots.size() << " roots found" << std::endl;
+#endif
+            std::sort(roots.begin(), roots.end());
+            roots.erase(std::unique(roots.begin(), roots.end()), roots.end());
+#endif
+#ifdef SHADOW_STACK_GC
             std::vector<uint64_t> gcRoots;
             FunctionStackEntry* functionStackEntry = thread->GetFunctionStack();
             while (functionStackEntry)
@@ -337,19 +395,39 @@ void GarbageCollector::MarkLiveAllocations()
                     {
                         uint64_t* gcRootPtr = gcEntry[i];
                         uint64_t gcRoot(*gcRootPtr);
-                        gcRoots.push_back(gcRoot);
+                        if (gcRoot != 0)
+                        {
+                            gcRoots.push_back(gcRoot);
+                        }
                     }
                 }
                 functionStackEntry = functionStackEntry->next;
             }
             std::sort(gcRoots.begin(), gcRoots.end());
             gcRoots.erase(std::unique(gcRoots.begin(), gcRoots.end()), gcRoots.end());
-            for (const ObjectReference& gcRoot : gcRoots)
+#endif
+#if defined(SHADOW_STACK_GC) && defined(STACK_WALK_GC)
+            if (roots != gcRoots)
+            {
+                throw std::runtime_error("roots != gcRoots");
+            }
+#endif
+#ifdef STACK_WALK_GC
+            for (uint64_t root : roots)
+            {
+                MarkLiveAllocations(ObjectReference(root), checked);
+            }
+#elif defined(SHADOW_STACK_GC)
+            for (uint64_t gcRoot : gcRoots)
             {
                 MarkLiveAllocations(ObjectReference(gcRoot), checked);
             }
+#endif        
         }
     }
+#ifdef DEBUG_GC
+    std::cerr << "end GC" << std::endl;
+#endif
 }
 
 } } // namespace cminor::machine
